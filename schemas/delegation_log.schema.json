@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sciaudit-stress/schemas/delegation_log.schema.json",
+  "title": "Responsible LLM-use delegation log entry (PLACEHOLDER — finalized by Task 1)",
+  "description": "Fields per staff manual §16.2. Loosely typed for now.",
+  "type": "object",
+  "required": [
+    "week",
+    "research_task",
+    "delegated",
+    "manually_verified",
+    "accepted_or_rejected",
+    "observed_failure",
+    "lesson"
+  ],
+  "properties": {
+    "week": { "type": ["string", "integer"] },
+    "research_task": { "type": "string" },
+    "delegated": { "type": "string" },
+    "manually_verified": { "type": "string" },
+    "accepted_or_rejected": { "type": "string" },
+    "observed_failure": { "type": "string" },
+    "lesson": { "type": "string" }
+  }
+}

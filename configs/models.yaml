@@ -1,0 +1,9 @@
+# Approved open/local models for EVALUATED systems.
+# No paid or hidden external APIs in submitted systems (staff manual §7.4).
+# Placeholder — Baseline/systems TA fills real ids/paths before Week 1.
+
+approved_models:
+  - name: approved_open_model
+    backend: huggingface        # huggingface | local_server
+    path: null
+    notes: "Placeholder entry."

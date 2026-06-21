@@ -1,0 +1,31 @@
+# === Private / hidden data — must NEVER enter this public repo ===
+# (these live only in the access-limited `sciaudit-stress-private` repo)
+data_private/
+data_private_ta_only/
+hidden/
+*_hidden*.jsonl
+provenance_map.jsonl
+master_instances.jsonl
+
+# NOTE: public gold IS allowed and expected here:
+#   data_public/public_warmup/gold.jsonl
+#   data_public/public_dev/gold.jsonl
+# Do NOT add a broad "*gold*.jsonl" rule — it would block those legitimate files.
+
+# === Run outputs ===
+outputs/
+runs/
+
+# === Python ===
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+# === Local env / secrets ===
+.env
+.env.*

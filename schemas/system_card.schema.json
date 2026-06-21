@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sciaudit-stress/schemas/system_card.schema.json",
+  "title": "System card (PLACEHOLDER — finalized by Writing/Task 1)",
+  "description": "Fields per staff manual §19.4. Loosely typed for now.",
+  "type": "object",
+  "required": ["system_name", "team", "version", "model"],
+  "properties": {
+    "system_name": { "type": "string" },
+    "team": { "type": "string" },
+    "version": { "type": "string" },
+    "model": { "type": "string" },
+    "retrieval_method": { "type": "string" },
+    "uses_numeric_checker": { "type": "boolean" },
+    "uses_fine_tuning": { "type": "boolean" },
+    "uses_vlm": { "type": "boolean" },
+    "intended_use": { "type": "string" },
+    "non_intended_use": { "type": "string" },
+    "known_failure_modes": { "type": "string" }
+  }
+}

@@ -1,0 +1,10 @@
+# Evaluation paths/settings. Finalized by Schema/evaluator TA (Task 5).
+# Placeholder paths; files appear once Task 2/3 produce data.
+
+public_warmup:
+  inputs: data_public/public_warmup/inputs.jsonl
+  gold: data_public/public_warmup/gold.jsonl
+
+public_dev:
+  inputs: data_public/public_dev/inputs.jsonl
+  gold: data_public/public_dev/gold.jsonl

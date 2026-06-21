@@ -1,0 +1,20 @@
+# Shared label contract. Read by baselines, system_template, evaluator, validators.
+# Single source of truth — do not hard-code these lists elsewhere.
+
+# Verdict space (staff manual §2.1).
+verdicts:
+  - warranted
+  - overclaimed
+  - contradicted
+  - insufficient
+
+# Multi-label issue tags (staff manual §12.3 / proposal Task C).
+issue_tags:
+  - numerical_inconsistency
+  - claim_stronger_than_evidence
+  - unsupported_generalization
+  - missing_ablation_support
+  - non_comparable_baseline
+  - weak_statistical_support
+  - evidence_missing_or_incomplete
+  - caption_chart_mismatch

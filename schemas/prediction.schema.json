@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sciaudit-stress/schemas/prediction.schema.json",
+  "title": "SciAudit-Stress prediction object",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "instance_id",
+    "verdict",
+    "confidence",
+    "predicted_eids",
+    "issue_tags",
+    "abstain",
+    "runtime_seconds",
+    "estimated_cost",
+    "system_info"
+  ],
+  "properties": {
+    "instance_id": { "type": "string", "minLength": 1 },
+    "verdict": {
+      "type": "string",
+      "enum": ["warranted", "overclaimed", "contradicted", "insufficient"]
+    },
+    "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+    "predicted_eids": { "type": "array", "items": { "type": "string" } },
+    "issue_tags": { "type": "array", "items": { "type": "string" } },
+    "abstain": { "type": "boolean" },
+    "rationale_short": { "type": "string", "maxLength": 600 },
+    "runtime_seconds": { "type": "number", "minimum": 0.0 },
+    "estimated_cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gpu_seconds", "api_cost_usd"],
+      "properties": {
+        "gpu_seconds": { "type": "number", "minimum": 0.0 },
+        "api_cost_usd": { "type": "number", "minimum": 0.0 }
+      }
+    },
+    "system_info": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "uses_numeric_checker", "uses_lora", "uses_vlm"],
+      "properties": {
+        "model": { "type": "string" },
+        "uses_numeric_checker": { "type": "boolean" },
+        "uses_lora": { "type": "boolean" },
+        "uses_vlm": { "type": "boolean" }
+      }
+    }
+  }
+}

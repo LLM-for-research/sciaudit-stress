@@ -1,0 +1,8 @@
+# Per-system configuration. Teams override as needed.
+system_name: scaffold-stub
+model: scaffold-stub        # real systems must use an approved open model (../configs/models.yaml)
+retrieval:
+  method: none             # none | bm25 | dense
+abstention:
+  enabled: false
+  confidence_threshold: 0.5
