@@ -22,10 +22,14 @@ jobs:
           uv run python system_template/run.py \
             --input examples/sample_inputs.jsonl \
             --output /tmp/predictions.jsonl
+      - name: Smoke run B0 baseline
+        run: |
+          uv run python -m sciaudit.baselines.b0_always_insufficient \
+            --input examples/sample_inputs.jsonl \
+            --output /tmp/b0.jsonl
 
       # --- Enable as modules land (staff manual §6.3) ---
       # - run: uv run python -m sciaudit.leakage.forbidden_key_scan data_public/
       # - run: uv run python -m sciaudit.schemas.validate_inputs data_public/public_dev/inputs.jsonl
       # - run: uv run python -m sciaudit.schemas.validate_predictions examples/sample_predictions.jsonl
-      # - run: uv run python -m sciaudit.baselines.b0_always_insufficient --input data_public/public_warmup/inputs.jsonl --output /tmp/b0.jsonl
       # - run: uv run python -m sciaudit.evaluator.score --pred /tmp/b0.jsonl --gold data_public/public_warmup/gold.jsonl
