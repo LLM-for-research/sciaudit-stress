@@ -1,0 +1,4 @@
+{"instance_id":"sas_001","gold":{"verdict":"warranted","supporting_eids":["e01"],"issue_tags":[]}}
+{"instance_id":"sas_002","gold":{"verdict":"overclaimed","supporting_eids":["e02"],"issue_tags":["claim_stronger_than_evidence"]}}
+{"instance_id":"sas_003","gold":{"verdict":"contradicted","supporting_eids":["e01","e03"],"issue_tags":["numerical_inconsistency"]}}
+{"instance_id":"sas_004","gold":{"verdict":"insufficient","supporting_eids":[],"issue_tags":["evidence_missing"]}}

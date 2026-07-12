@@ -29,3 +29,5 @@ dist/
 # === Local env / secrets ===
 .env
 .env.*
+metrics.json
+report.md
