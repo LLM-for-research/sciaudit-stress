@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sciaudit-stress/schemas/track_a_input.schema.json",
+  "title": "SciAudit-Stress Track A public input instance",
+  "description": "Student/system-facing input for Track A: abstracted paper ID + normalized claim + bounded evidence pack only. additionalProperties:false also guards against leaked private fields (gold verdict, severity, stress metadata, private rationale, provenance).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "paper_id",
+    "instance_id",
+    "claim",
+    "evidence_pack",
+    "allowed_evidence_ids"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "paper_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Abstracted paper identifier (e.g. P017). Titles, authors, venues, and URLs stay in the private provenance map."
+    },
+    "instance_id": { "type": "string", "minLength": 1 },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "claim_type", "scope"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "claim_type": {
+          "type": "string",
+          "enum": [
+            "numerical_performance",
+            "baseline_superiority",
+            "ablation",
+            "robustness",
+            "efficiency",
+            "bounded_generalization"
+          ]
+        },
+        "scope": { "type": "string" }
+      }
+    },
+    "evidence_pack": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["eid", "source_kind", "modality", "text"],
+        "properties": {
+          "eid": { "type": "string", "minLength": 1 },
+          "source_kind": { "type": "string" },
+          "modality": { "type": "string" },
+          "text": { "type": "string" },
+          "normalized_numbers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "value": { "type": "number" },
+                "unit": { "type": "string" },
+                "context": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "allowed_evidence_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "The only evidence IDs a system may cite in predicted_eids. Must be a subset of the eids present in evidence_pack."
+    }
+  }
+}

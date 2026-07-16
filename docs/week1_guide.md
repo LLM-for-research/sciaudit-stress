@@ -32,7 +32,7 @@ uv run python -m sciaudit.baselines.b0_always_insufficient \
 If `pytest` is green and both commands write a `predictions` file, your environment is correct.
 Now read three short files so you understand the contract:
 
-- `schemas/student_input.schema.json` — the only thing a system receives.
+- `schemas/track_a_input.schema.json` — the only thing a system receives (see [schemas doc](schemas.md)).
 - `schemas/prediction.schema.json` — the only thing a system may output.
 - `sciaudit/baselines/b0_always_insufficient.py` — the smallest complete system (B0).
 

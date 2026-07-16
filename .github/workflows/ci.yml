@@ -28,8 +28,17 @@ jobs:
             --input examples/sample_inputs.jsonl \
             --output /tmp/b0.jsonl
 
+      - name: Validate example inputs (schema + leakage)
+        run: uv run python -m sciaudit.schemas.validate_inputs examples/sample_inputs.jsonl
+      - name: Validate example predictions
+        run: |
+          uv run python -m sciaudit.schemas.validate_predictions \
+            examples/sample_predictions.jsonl --input examples/sample_inputs.jsonl
+      - name: Validate B0 predictions
+        run: |
+          uv run python -m sciaudit.schemas.validate_predictions /tmp/b0.jsonl \
+            --input examples/sample_inputs.jsonl
+
       # --- Enable as modules land (staff manual §6.3) ---
       # - run: uv run python -m sciaudit.leakage.forbidden_key_scan data_public/
-      # - run: uv run python -m sciaudit.schemas.validate_inputs data_public/public_dev/inputs.jsonl
-      # - run: uv run python -m sciaudit.schemas.validate_predictions examples/sample_predictions.jsonl
       # - run: uv run python -m sciaudit.evaluator.score --pred /tmp/b0.jsonl --gold data_public/public_warmup/gold.jsonl

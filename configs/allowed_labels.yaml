@@ -8,6 +8,15 @@ verdicts:
   - contradicted
   - insufficient
 
+# Claim types (proposal §8.1).
+claim_types:
+  - numerical_performance
+  - baseline_superiority
+  - ablation
+  - robustness
+  - efficiency
+  - bounded_generalization
+
 # Multi-label issue tags (staff manual §12.3 / proposal Task C).
 issue_tags:
   - numerical_inconsistency

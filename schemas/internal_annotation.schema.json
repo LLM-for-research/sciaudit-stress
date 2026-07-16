@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sciaudit-stress/schemas/internal_annotation.schema.json",
+  "title": "SciAudit-Stress internal annotation record (PRIVATE, draft)",
+  "description": "Staff/TA-only annotation record kept in the private sciaudit-stress-private repository. Real records must NEVER be committed to the public repo; only clearly synthetic examples may appear here. The public Track A input is derived from this record by stripping paper provenance, stress metadata, gold labels, and review fields.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "instance_id",
+    "paper",
+    "claim",
+    "evidence_pack",
+    "gold",
+    "review"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "instance_id": { "type": "string", "minLength": 1 },
+    "paper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paper_id"],
+      "properties": {
+        "paper_id": { "type": "string", "minLength": 1 },
+        "provenance_ref": {
+          "type": "string",
+          "description": "Key into the private provenance map (title, authors, URL, license, hash, extraction script)."
+        },
+        "domain": { "type": "string" },
+        "year_bucket": { "type": "string" }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "claim_type", "scope"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "claim_type": {
+          "type": "string",
+          "enum": [
+            "numerical_performance",
+            "baseline_superiority",
+            "ablation",
+            "robustness",
+            "efficiency",
+            "bounded_generalization"
+          ]
+        },
+        "claim_strength": { "type": "string", "enum": ["weak", "moderate", "strong"] },
+        "scope": { "type": "string" },
+        "source_location": {
+          "type": "string",
+          "description": "Where in the paper the claim comes from (section/page), private."
+        }
+      }
+    },
+    "evidence_pack": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["eid", "source_kind", "modality", "text"],
+        "properties": {
+          "eid": { "type": "string", "minLength": 1 },
+          "source_kind": {
+            "type": "string",
+            "description": "e.g. text_span, table, table_row, figure, caption, chart_metadata, appendix"
+          },
+          "modality": { "type": "string" },
+          "text": { "type": "string" },
+          "source_ref": {
+            "type": "string",
+            "description": "Private pointer into the paper (e.g. table_2, figure_3, section_4.1)."
+          },
+          "is_distractor": { "type": "boolean" },
+          "normalized_numbers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "value": { "type": "number" },
+                "unit": { "type": "string" },
+                "context": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "stress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_stress_case"],
+      "properties": {
+        "is_stress_case": { "type": "boolean" },
+        "stress_type": {
+          "type": "string",
+          "enum": [
+            "claim_strengthening",
+            "scope_expansion",
+            "evidence_removal",
+            "distractor_insertion",
+            "numerical_perturbation",
+            "evidence_reordering",
+            "caption_chart_mismatch",
+            "non_comparable_baseline_trap",
+            "missing_ablation_trap",
+            "weak_statistical_support_trap"
+          ]
+        },
+        "seed_instance_id": { "type": "string" }
+      }
+    },
+    "gold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "supporting_eids", "issue_tags"],
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": ["warranted", "overclaimed", "contradicted", "insufficient"]
+        },
+        "supporting_eids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "issue_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "numerical_inconsistency",
+              "claim_stronger_than_evidence",
+              "unsupported_generalization",
+              "missing_ablation_support",
+              "non_comparable_baseline",
+              "weak_statistical_support",
+              "evidence_missing_or_incomplete",
+              "caption_chart_mismatch"
+            ]
+          }
+        },
+        "severity": { "type": "string", "enum": ["minor", "moderate", "severe"] },
+        "private_rationale": {
+          "type": "string",
+          "description": "Why the gold verdict holds. Never shown to systems or students."
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["validation_level"],
+      "properties": {
+        "validation_level": {
+          "type": "string",
+          "enum": ["auto_unchecked", "team_verified", "ta_validated", "ta_adjudicated"]
+        },
+        "reviewer": { "type": "string" },
+        "review_note": { "type": "string" },
+        "human_verification_note": {
+          "type": "string",
+          "description": "Mandatory for accepted stress cases: what a human checked before acceptance."
+        }
+      }
+    },
+    "split": {
+      "type": "string",
+      "enum": [
+        "public_warmup",
+        "public_dev",
+        "hidden_val_1",
+        "hidden_val_2",
+        "gold_hidden",
+        "auto_stress_hidden",
+        "challenge_hidden",
+        "silver_pool"
+      ]
+    }
+  }
+}
