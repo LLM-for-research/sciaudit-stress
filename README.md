@@ -30,3 +30,16 @@ docker run --rm -v $PWD/input:/input:ro -v $PWD/output:/output \
 
 Whatever lives inside the system (BM25, LLM, numeric checker, abstention, LoRA),
 the external contract is identical.
+
+## Data contract
+
+Three layers, strictly separated (see [docs/schemas.md](docs/schemas.md)):
+public Track A input (`schemas/track_a_input.schema.json`), prediction
+(`schemas/prediction.schema.json`), and the private internal annotation draft
+(`schemas/internal_annotation.schema.json`). Validate files with:
+
+```bash
+uv run python -m sciaudit.schemas.validate_inputs examples/sample_inputs.jsonl
+uv run python -m sciaudit.schemas.validate_predictions examples/sample_predictions.jsonl \
+  --input examples/sample_inputs.jsonl
+```

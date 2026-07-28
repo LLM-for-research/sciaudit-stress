@@ -9,7 +9,7 @@ contract identical; change only what's *inside* `audit_instance`.
 python run.py --input inputs.jsonl --output predictions.jsonl
 ```
 
-- `--input`: JSONL of student-input objects (`../schemas/student_input.schema.json`)
+- `--input`: JSONL of Track A input objects (`../schemas/track_a_input.schema.json`)
 - `--output`: JSONL of prediction objects (`../schemas/prediction.schema.json`)
 - one prediction line per input line, `instance_id` preserved.
 
