@@ -1,0 +1,15 @@
+{"instance_id": "sas_3k9f2qx8", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01", "e02"], "issue_tags": ["claim_stronger_than_evidence", "unsupported_generalization"]}}
+{"instance_id": "sas_m4t8w2r5", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01"], "issue_tags": ["claim_stronger_than_evidence", "unsupported_generalization"]}}
+{"instance_id": "sas_p7n1c4h9", "gold": {"verdict": "insufficient", "supporting_eids": [], "issue_tags": ["evidence_missing_or_incomplete", "missing_ablation_support"]}}
+{"instance_id": "sas_q2v9d6s1", "gold": {"verdict": "contradicted", "supporting_eids": ["e01"], "issue_tags": ["numerical_inconsistency"]}}
+{"instance_id": "sas_r5t3k8w7", "gold": {"verdict": "insufficient", "supporting_eids": [], "issue_tags": ["evidence_missing_or_incomplete"]}}
+{"instance_id": "sas_w4h6c9d2", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01"], "issue_tags": ["claim_stronger_than_evidence", "unsupported_generalization"]}}
+{"instance_id": "sas_y5m3k7n1", "gold": {"verdict": "warranted", "supporting_eids": ["e01", "e02"], "issue_tags": []}}
+{"instance_id": "sas_z9k1c6x3", "gold": {"verdict": "warranted", "supporting_eids": ["e01", "e02"], "issue_tags": []}}
+{"instance_id": "sas_a2v6b8q4", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01"], "issue_tags": ["claim_stronger_than_evidence", "weak_statistical_support"]}}
+{"instance_id": "sas_d7j9f3t5", "gold": {"verdict": "contradicted", "supporting_eids": ["e01"], "issue_tags": ["numerical_inconsistency"]}}
+{"instance_id": "sas_g5b8h2m7", "gold": {"verdict": "insufficient", "supporting_eids": [], "issue_tags": ["evidence_missing_or_incomplete"]}}
+{"instance_id": "sas_j3n8c4k9", "gold": {"verdict": "warranted", "supporting_eids": ["e01"], "issue_tags": []}}
+{"instance_id": "sas_l6v9k2b8", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01"], "issue_tags": ["unsupported_generalization"]}}
+{"instance_id": "sas_m1p7e5w9", "gold": {"verdict": "contradicted", "supporting_eids": ["e01", "e02"], "issue_tags": []}}
+{"instance_id": "sas_n4r8k6c2", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01", "e02"], "issue_tags": ["unsupported_generalization"]}}

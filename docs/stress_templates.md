@@ -107,9 +107,11 @@ Example:
 
 Toy stress cases may include expected verdicts for documentation and testing. However, public input files must not include gold labels, stress metadata, transformation type, private provenance, or validation notes.
 
-Student-facing input should contain only:
+Student-facing input should contain only the fields of `schemas/track_a_input.schema.json`:
 
 - `schema_version`
-- `instance_id`
-- `claim`
-- `evidence_pack`
+- `paper_id` (abstracted; the real paper lives in the private provenance map)
+- `instance_id` (non-semantic `sas_` ID)
+- `claim` (text, `claim_type`, scope)
+- `evidence_pack` (frozen units with `eid`, `source_kind`, `modality`, `text`)
+- `allowed_evidence_ids` (the only IDs a prediction may cite)
