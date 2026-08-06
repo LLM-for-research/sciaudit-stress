@@ -1,39 +1,34 @@
 {
-  "version": 1,
+  "version": 2,
   "purpose": "Staff-side provenance manifest for the public warm-up slice. NOT student-facing data; never merged into inputs.jsonl.",
   "status": "synthetic_placeholder",
+  "leakage_safe": "This file intentionally contains no verdict, stress-type, or label information; full provenance lives in the private repository.",
   "replace_policy": "Instances are synthetic placeholders to unlock the readiness loop. Replace with paper-derived instances once the controlled paper pool (Task 2) lands; keep instance_ids stable by editing content in place.",
   "paper_id_range": {
     "min": "P901",
     "max": "P914",
     "meaning": "Reserved for synthetic placeholder papers. Real papers start at P001."
   },
-  "verdict_balance": {
-    "warranted": 3,
-    "overclaimed": 6,
-    "contradicted": 3,
-    "insufficient": 3,
-    "max_share": 0.4
+  "dataset_shape": {
+    "instances": 15,
+    "verdict_balance": "All four verdicts are present and none exceeds 50% (guarded by tests)."
   },
   "instances": [
-    {"instance_id": "sas_3k9f2qx8", "paper_id": "P901", "origin": "toy_stress_001 (claim_strengthening)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_m4t8w2r5", "paper_id": "P902", "origin": "toy_stress_002 (scope_expansion)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_p7n1c4h9", "paper_id": "P903", "origin": "toy_stress_003 (evidence_removal)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_q2v9d6s1", "paper_id": "P904", "origin": "toy_stress_004 (numeric_mismatch)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_r5t3k8w7", "paper_id": "P905", "origin": "toy_stress_005 (missing_baseline)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_w4h6c9d2", "paper_id": "P906", "origin": "sample_inputs (baseline_superiority)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_y5m3k7n1", "paper_id": "P907", "origin": "new_synthetic (numerical_performance)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_z9k1c6x3", "paper_id": "P908", "origin": "sample_inputs (bounded_generalization)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_a2v6b8q4", "paper_id": "P909", "origin": "sample_inputs (ablation)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_d7j9f3t5", "paper_id": "P911", "origin": "new_synthetic (efficiency/numeric mismatch)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_g5b8h2m7", "paper_id": "P912", "origin": "sample_inputs (efficiency)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_j3n8c4k9", "paper_id": "P913", "origin": "new_synthetic (robustness, bounded)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_l6v9k2b8", "paper_id": "P914", "origin": "new_synthetic (robustness, unbounded; same pack as sas_j3n8c4k9)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_m1p7e5w9", "paper_id": "P907", "origin": "new_synthetic (baseline_superiority, contradicted)", "source": "synthetic", "replace_with": "paper_derived"},
-    {"instance_id": "sas_n4r8k6c2", "paper_id": "P908", "origin": "new_synthetic (bounded_generalization, overclaimed)", "source": "synthetic", "replace_with": "paper_derived"}
+    {"instance_id": "sas_3k9f2qx8", "paper_id": "P901", "source": "synthetic", "origin": "examples/toy_stress_cases.jsonl (baseline_superiority)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_m4t8w2r5", "paper_id": "P902", "source": "synthetic", "origin": "examples/toy_stress_cases.jsonl (robustness)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_p7n1c4h9", "paper_id": "P903", "source": "synthetic", "origin": "examples/toy_stress_cases.jsonl (ablation)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_q2v9d6s1", "paper_id": "P904", "source": "synthetic", "origin": "examples/toy_stress_cases.jsonl (numerical_performance)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_r5t3k8w7", "paper_id": "P905", "source": "synthetic", "origin": "examples/toy_stress_cases.jsonl (baseline_superiority)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_w4h6c9d2", "paper_id": "P906", "source": "synthetic", "origin": "examples/sample_inputs.jsonl (baseline_superiority)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_y5m3k7n1", "paper_id": "P907", "source": "synthetic", "origin": "new_synthetic (numerical_performance)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_z9k1c6x3", "paper_id": "P908", "source": "synthetic", "origin": "examples/sample_inputs.jsonl (bounded_generalization)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_a2v6b8q4", "paper_id": "P909", "source": "synthetic", "origin": "examples/sample_inputs.jsonl (ablation)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_d7j9f3t5", "paper_id": "P911", "source": "synthetic", "origin": "new_synthetic (efficiency)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_g5b8h2m7", "paper_id": "P912", "source": "synthetic", "origin": "examples/sample_inputs.jsonl (efficiency)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_j3n8c4k9", "paper_id": "P913", "source": "synthetic", "origin": "new_synthetic (robustness)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_l6v9k2b8", "paper_id": "P914", "source": "synthetic", "origin": "new_synthetic (robustness)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_m1p7e5w9", "paper_id": "P907", "source": "synthetic", "origin": "new_synthetic (baseline_superiority)", "replace_with": "paper_derived"},
+    {"instance_id": "sas_n4r8k6c2", "paper_id": "P908", "source": "synthetic", "origin": "new_synthetic (bounded_generalization)", "replace_with": "paper_derived"}
   ],
-  "human_review_required": [
-    "Every gold verdict below must be independently verified by a human reviewer (docs/human_verification_note_template.md) before any instance is treated as accepted.",
-    "warranted cases must not be identifiable by 'soft' wording: warranted (sas_y5m3k7n1, sas_z9k1c6x3, sas_j3n8c4k9) use strong, precise phrasing."
-  ]
+  "review_required": "Every gold verdict must be independently verified by a human reviewer (docs/human_verification_note_template.md) before any instance is treated as accepted."
 }

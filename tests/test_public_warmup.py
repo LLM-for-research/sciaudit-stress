@@ -36,6 +36,17 @@ SEMANTIC_HINTS = (
 )
 HEDGE_WORDS = ("may", "suggests", "reported", "in most", "appears", "can improve")
 
+# Any of these words in warm-up metadata files would make the gold label
+# guessable for specific instances (review guard: provenance must stay
+# label-free even though gold.jsonl itself is public for teaching purposes).
+LABEL_VOCABULARY = (
+    "warranted", "overclaimed", "contradicted", "insufficient",
+    "claim_strengthening", "scope_expansion", "evidence_removal",
+    "distractor_evidence", "numeric_mismatch", "table_caption_mismatch",
+    "missing_baseline", "weak_ablation", "non_comparable_baseline",
+    "severity", "private_rationale",
+)
+
 
 def _golds():
     return {obj["instance_id"]: obj["gold"] for _, obj in read_jsonl(str(GOLD))}
@@ -93,6 +104,16 @@ def test_paper_ids_are_abstracted():
     for obj in _inputs().values():
         paper_id = obj["paper_id"]
         assert re.match(r"^P\d{3}$", paper_id), f"non-abstracted paper_id: {paper_id}"
+
+
+def test_warmup_metadata_contains_no_label_vocabulary():
+    for name in ("manifest.json", "README.md"):
+        text = (WARMUP / name).read_text(encoding="utf-8").lower()
+        # Legitimate references that happen to contain vocabulary substrings:
+        # the B0 module name appears in the documented run commands.
+        text = text.replace("b0_always_insufficient", "")
+        for word in LABEL_VOCABULARY:
+            assert word not in text, f"{name} contains label vocabulary: '{word}'"
 
 
 # --- no trivial verdict correlation (claim-only probe) --------------------------
