@@ -31,3 +31,4 @@ dist/
 .env.*
 metrics.json
 report.md
+.vscode/
