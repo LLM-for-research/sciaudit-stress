@@ -29,6 +29,19 @@ Use this checklist before accepting a stress case into the benchmark.
 
 ## Leakage check
 
+The first four boxes are enforced automatically — run the gate rather than
+eyeballing the file:
+
+```bash
+uv run python -m sciaudit.leakage.forbidden_key_scan data_public/ examples/ -v
+```
+
+It exits 1 and prints the offending location (`inputs.jsonl:4: [input] $.gold`)
+for any forbidden key *or* string value. Files are scanned under the profile
+their path implies — a public `gold.jsonl` may carry the label, a student-facing
+`inputs.jsonl` may not. Exemptions live in `DEFAULT_RULES` in that module, each
+with a written reason; adding one takes a reviewed PR.
+
 - [ ] Public input does not contain `gold`.
 - [ ] Public input does not contain `stress_type`.
 - [ ] Public input does not contain `expected_verdict`.

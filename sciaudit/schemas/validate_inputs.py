@@ -19,7 +19,7 @@ import sys
 
 from . import (
     FORBIDDEN_INPUT_KEYS,
-    find_forbidden_keys,
+    find_forbidden,
     load_schema,
     read_jsonl,
     report,
@@ -43,7 +43,7 @@ def validate_input_file(path: str) -> list[str]:
     for line_no, obj in rows:
         where = f"{path}:{line_no}"
 
-        leaks = find_forbidden_keys(obj, FORBIDDEN_INPUT_KEYS)
+        leaks = find_forbidden(obj, FORBIDDEN_INPUT_KEYS)
         for loc in leaks:
             problems.append(
                 f"{where}: private field leaked into public input: {loc}"
