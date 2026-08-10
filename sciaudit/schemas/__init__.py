@@ -16,16 +16,31 @@ SCHEMAS_DIR = REPO_ROOT / "schemas"
 # Keys that only ever exist in private/internal data. Their presence anywhere
 # in a public input object means gold labels, stress metadata, provenance, or
 # private rationale leaked into the student-facing layer.
+#
+# The staff manual's list (§10.1, Listing 4) is the floor, not the ceiling: the
+# entries below it are project-specific extensions. Split names and stress
+# transformation names are listed too because they leak most often as *string
+# values* (e.g. {"split_name": "AutoStressHidden"}) rather than as keys — see
+# ``find_forbidden``.
 FORBIDDEN_INPUT_KEYS = frozenset({
+    # --- gold labels ---
     "gold",
     "gold_verdict",
     "verdict",
+    "expected_verdict",
     "supporting_eids",
     "severity",
+    # --- stress metadata ---
     "stress",
     "stress_type",
+    "transformation_type",
     "is_stress_case",
     "seed_instance_id",
+    "evidence_removal",
+    "scope_expansion",
+    "numeric_perturbation",
+    "distractor_flag",
+    # --- private rationale / review ---
     "private_rationale",
     "rationale_private",
     "review",
@@ -33,14 +48,26 @@ FORBIDDEN_INPUT_KEYS = frozenset({
     "human_verification_note",
     "validation_level",
     "reviewer",
+    "adjudication_note",
+    "TA_note",
+    # --- provenance / licensing ---
     "provenance",
     "provenance_map",
     "provenance_ref",
     "source_url",
     "source_ref",
     "source_location",
+    "paper_title",
+    "authors",
+    "venue",
+    "license_status",
     "is_distractor",
+    # --- split assignment (leaks which slice an instance belongs to) ---
     "split",
+    "private_slice",
+    "GoldHidden",
+    "AutoStressHidden",
+    "ChallengeHidden",
 })
 
 
@@ -67,19 +94,46 @@ def read_jsonl(path: str | Path) -> list[tuple[int, dict]]:
     return rows
 
 
-def find_forbidden_keys(obj, forbidden=FORBIDDEN_INPUT_KEYS, path="$") -> list[str]:
-    """Recursively locate forbidden keys; returns JSONPath-like locations."""
+def find_forbidden(
+    obj,
+    forbidden=FORBIDDEN_INPUT_KEYS,
+    path="$",
+    *,
+    scan_values: bool = True,
+) -> list[str]:
+    """Recursively locate forbidden keys *and* forbidden string values.
+
+    Staff manual §10.1 (Listing 8) requires both directions: a private name is a
+    leak whether it appears as ``{"stress_type": ...}`` or as
+    ``{"slice": "AutoStressHidden"}``. Matching on values is exact equality, so
+    prose that merely mentions a forbidden word ("the authors report ...") does
+    not trip the scan.
+
+    Returns JSONPath-like locations; value hits are rendered as
+    ``$.slice == 'AutoStressHidden'``.
+    """
     hits = []
     if isinstance(obj, dict):
         for key, value in obj.items():
             key_path = f"{path}.{key}"
             if key in forbidden:
                 hits.append(key_path)
-            hits.extend(find_forbidden_keys(value, forbidden, key_path))
+            elif scan_values and isinstance(value, str) and value in forbidden:
+                hits.append(f"{key_path} == {value!r}")
+            hits.extend(find_forbidden(value, forbidden, key_path, scan_values=scan_values))
     elif isinstance(obj, list):
         for i, item in enumerate(obj):
-            hits.extend(find_forbidden_keys(item, forbidden, f"{path}[{i}]"))
+            item_path = f"{path}[{i}]"
+            if scan_values and isinstance(item, str) and item in forbidden:
+                hits.append(f"{item_path} == {item!r}")
+            hits.extend(find_forbidden(item, forbidden, item_path, scan_values=scan_values))
     return hits
+
+
+def find_forbidden_keys(obj, forbidden=FORBIDDEN_INPUT_KEYS, path="$") -> list[str]:
+    """Key-only variant of :func:`find_forbidden` (kept for callers that
+    deliberately want to ignore values)."""
+    return find_forbidden(obj, forbidden, path, scan_values=False)
 
 
 def schema_errors(instance: dict, schema: dict) -> list[str]:

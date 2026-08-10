@@ -39,6 +39,10 @@ jobs:
           uv run python -m sciaudit.schemas.validate_predictions /tmp/b0.jsonl \
             --input examples/sample_inputs.jsonl
 
+      - name: Forbidden-key scan (leakage gate, staff manual §10.1)
+        run: |
+          uv run python -m sciaudit.leakage.forbidden_key_scan \
+            data_public/ examples/ --verbose
+
       # --- Enable as modules land (staff manual §6.3) ---
-      # - run: uv run python -m sciaudit.leakage.forbidden_key_scan data_public/
       # - run: uv run python -m sciaudit.evaluator.score --pred /tmp/b0.jsonl --gold data_public/public_warmup/gold.jsonl
