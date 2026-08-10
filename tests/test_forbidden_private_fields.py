@@ -1,4 +1,4 @@
-"""Tests for the recursive forbidden-key scan (staff manual §10.1, Listing 8).
+"""Tests for the recursive forbidden-key scan.
 
 Covers the acceptance criteria of the leakage gate:
 - the repo's own public trees scan clean (exit 0);

@@ -13,15 +13,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS_DIR = REPO_ROOT / "schemas"
 
-# Keys that only ever exist in private/internal data. Their presence anywhere
-# in a public input object means gold labels, stress metadata, provenance, or
-# private rationale leaked into the student-facing layer.
-#
-# The staff manual's list (§10.1, Listing 4) is the floor, not the ceiling: the
-# entries below it are project-specific extensions. Split names and stress
-# transformation names are listed too because they leak most often as *string
-# values* (e.g. {"split_name": "AutoStressHidden"}) rather than as keys — see
-# ``find_forbidden``.
 FORBIDDEN_INPUT_KEYS = frozenset({
     # --- gold labels ---
     "gold",
@@ -103,7 +94,7 @@ def find_forbidden(
 ) -> list[str]:
     """Recursively locate forbidden keys *and* forbidden string values.
 
-    Staff manual §10.1 (Listing 8) requires both directions: a private name is a
+    Staff manual requires both directions: a private name is a
     leak whether it appears as ``{"stress_type": ...}`` or as
     ``{"slice": "AutoStressHidden"}``. Matching on values is exact equality, so
     prose that merely mentions a forbidden word ("the authors report ...") does
