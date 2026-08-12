@@ -13,3 +13,5 @@
 {"instance_id": "sas_l6v9k2b8", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01"], "issue_tags": ["unsupported_generalization"]}}
 {"instance_id": "sas_m1p7e5w9", "gold": {"verdict": "contradicted", "supporting_eids": ["e01", "e02"], "issue_tags": []}}
 {"instance_id": "sas_n4r8k6c2", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01", "e02"], "issue_tags": ["unsupported_generalization"]}}
+{"instance_id": "sas_x6r9h4k2", "gold": {"verdict": "warranted", "supporting_eids": ["e01"], "issue_tags": []}}
+{"instance_id": "sas_v8t2m5p1", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01", "e02"], "issue_tags": ["claim_stronger_than_evidence"]}}

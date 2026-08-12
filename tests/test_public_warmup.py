@@ -34,7 +34,10 @@ SEMANTIC_HINTS = (
     "warrant", "overclaim", "contrad", "insufficient", "stress", "remov",
     "distract", "abstain", "gold", "leak", "seed", "trap",
 )
-HEDGE_WORDS = ("may", "suggests", "reported", "in most", "appears", "can improve")
+# Universal-quantifier words that overclaiming claims typically abuse
+# (claim-only probe, staff manual §10.3): the verdict must not be readable
+# from the mere presence/absence of a quantifier.
+UNIV_QUANTIFIER = re.compile(r"\b(all|every|consistently|always|any)\b", re.I)
 
 # Any of these words in warm-up metadata files would make the gold label
 # guessable for specific instances (review guard: provenance must stay
@@ -120,27 +123,31 @@ def test_warmup_metadata_contains_no_label_vocabulary():
 
 def test_no_claim_type_predicts_a_single_verdict():
     by_type = {}
+    type_counts = Counter()
     for instance_id, obj in _inputs().items():
-        by_type.setdefault(obj["claim"]["claim_type"], set()).add(
-            _golds()[instance_id]["verdict"]
-        )
+        claim_type = obj["claim"]["claim_type"]
+        type_counts[claim_type] += 1
+        by_type.setdefault(claim_type, set()).add(_golds()[instance_id]["verdict"])
     for claim_type, verdicts in by_type.items():
-        if len(verdicts) < 2:
-            continue  # single instance: nothing to leak
-        assert len(verdicts) >= 2, f"claim_type {claim_type} always -> {verdicts}"
+        if type_counts[claim_type] >= 2:
+            assert len(verdicts) >= 2, (
+                f"claim_type {claim_type} (n={type_counts[claim_type]}) "
+                f"always -> {verdicts}"
+            )
 
 
-def test_warranted_does_not_correlate_with_soft_wording():
-    hedged = {i for i, o in _inputs().items()
-              if any(w in o["claim"]["text"].lower() for w in HEDGE_WORDS)}
-    non_hedged = set(_inputs()) - hedged
+def test_verdict_not_predictable_from_quantifier_wording():
+    quantifier = {}
+    for instance_id, obj in _inputs().items():
+        has_q = bool(UNIV_QUANTIFIER.search(obj["claim"]["text"]))
+        quantifier.setdefault(has_q, set()).add(_golds()[instance_id]["verdict"])
 
-    hedged_verdicts = {_golds()[i]["verdict"] for i in hedged}
-    non_hedged_verdicts = {_golds()[i]["verdict"] for i in non_hedged}
-
-    # both subsets must be verdict-mixed, so the label is not guessable from phrasing
-    assert len(hedged_verdicts) >= 2, f"hedged wording only -> {hedged_verdicts}"
-    assert len(non_hedged_verdicts) >= 3, f"strong wording only -> {non_hedged_verdicts}"
+    # Both the quantifier and the no-quantifier subset must be verdict-mixed,
+    # and warranted must appear among quantifier-worded claims (the classic
+    # shortcut: quantifier => overclaimed, no quantifier => warranted).
+    for has_q, verdicts in quantifier.items():
+        assert len(verdicts) >= 3, f"quantifier={has_q} only -> {verdicts}"
+    assert "warranted" in quantifier.get(True, set())
 
 
 # --- end-to-end: B0 + evaluator on the warm-up slice -----------------------------
@@ -166,4 +173,6 @@ def test_b0_runs_on_warmup_and_evaluator_scores_it(tmp_path):
         / len(_golds())
     )
     assert metrics["verdict"]["accuracy"] == pytest.approx(insufficient_share)
-    assert metrics["severe_false_warrant_rate"]["count"] == 0
+    # B0 never abstains, so the non-abstained SFWR covers all predictions;
+    # B0 never predicts warranted, so it can never commit a severe false warrant.
+    assert metrics["severe_false_warrant_rate_non_abstained"]["count"] == 0

@@ -7,8 +7,8 @@ paper pool (Task 2) lands.
 
 | File | Contents |
 |---|---|
-| `inputs.jsonl` | 15 Track A input instances (`track_a_input_v1` schema) |
-| `gold.jsonl` | 15 gold records, one per `instance_id` (format of `examples/toy_gold.jsonl`) |
+| `inputs.jsonl` | 17 Track A input instances (`track_a_input_v1` schema) |
+| `gold.jsonl` | 17 gold records, one per `instance_id` (format of `examples/toy_gold.jsonl`) |
 | `manifest.json` | Staff-side provenance: synthetic markers, neutral origins, dataset shape (never merged into inputs) |
 
 Properties guaranteed by `tests/test_public_warmup.py`:
