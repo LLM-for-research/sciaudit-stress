@@ -28,6 +28,25 @@ jobs:
             --input examples/sample_inputs.jsonl \
             --output /tmp/b0.jsonl
 
+      # --- Readiness loop on the public warm-up slice (staff manual §8.1) ---
+      - name: Run B0 on public warm-up
+        run: |
+          uv run python -m sciaudit.baselines.b0_always_insufficient \
+            --input data_public/public_warmup/inputs.jsonl \
+            --output /tmp/b0_warmup.jsonl
+      - name: Validate warm-up predictions
+        run: |
+          uv run python -m sciaudit.schemas.validate_predictions /tmp/b0_warmup.jsonl \
+            --input data_public/public_warmup/inputs.jsonl
+      - name: Evaluate warm-up (B0 vs gold)
+        run: |
+          uv run python -m sciaudit.evaluator.score \
+            --pred /tmp/b0_warmup.jsonl --gold data_public/public_warmup/gold.jsonl \
+            --out /tmp/warmup_metrics.json
+      - name: Guard warm-up metrics
+        run: |
+          uv run python -c "import json; m = json.load(open('/tmp/warmup_metrics.json')); assert m['counts']['gold_instances'] >= 10, m; assert m['counts']['invalid_predictions'] == 0, m; assert m['counts']['missing_predictions'] == 0, m"
+
       - name: Validate example inputs (schema + leakage)
         run: uv run python -m sciaudit.schemas.validate_inputs examples/sample_inputs.jsonl
       - name: Validate example predictions
@@ -43,6 +62,3 @@ jobs:
         run: |
           uv run python -m sciaudit.leakage.forbidden_key_scan \
             data_public/ examples/ --verbose
-
-      # --- Enable as modules land (staff manual §6.3) ---
-      # - run: uv run python -m sciaudit.evaluator.score --pred /tmp/b0.jsonl --gold data_public/public_warmup/gold.jsonl

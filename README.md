@@ -43,3 +43,29 @@ uv run python -m sciaudit.schemas.validate_inputs examples/sample_inputs.jsonl
 uv run python -m sciaudit.schemas.validate_predictions examples/sample_predictions.jsonl \
   --input examples/sample_inputs.jsonl
 ```
+
+## Readiness loop (public warm-up)
+
+The full chain CI runs on the public warm-up slice (staff manual §8.1),
+runnable locally in this order:
+
+```bash
+# 1. public inputs are schema-valid and leakage-free
+uv run python -m sciaudit.schemas.validate_inputs data_public/public_warmup/inputs.jsonl
+
+# 2. a system runs over the inputs (B0 = trivial always-insufficient)
+uv run python -m sciaudit.baselines.b0_always_insufficient \
+  --input data_public/public_warmup/inputs.jsonl --output /tmp/b0_warmup.jsonl
+
+# 3. the system's predictions are schema-valid and cite allowed evidence
+uv run python -m sciaudit.schemas.validate_predictions /tmp/b0_warmup.jsonl \
+  --input data_public/public_warmup/inputs.jsonl
+
+# 4. no private fields anywhere a student could read them
+uv run python -m sciaudit.leakage.forbidden_key_scan data_public/ examples/
+
+# 5. score predictions against the gold labels
+uv run python -m sciaudit.evaluator.score \
+  --pred /tmp/b0_warmup.jsonl --gold data_public/public_warmup/gold.jsonl \
+  --out /tmp/warmup_metrics.json
+```
