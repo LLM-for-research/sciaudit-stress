@@ -1,40 +1,40 @@
-# Weekly update template
+# Шаблон еженедельного апдейта
 
-Copy this block into your PR description, the weekly thread, or your team channel — every week,
-even a light one. Keep it short; a raised blocker on day 2 is cheaper than a silent one on day 6.
+Скопируйте этот блок в описание PR, в еженедельный тред или в канал команды — каждую неделю, даже
+лёгкую. Держите его коротким: блокер, поднятый на второй день, дешевле, чем замолчанный до шестого.
 
 ```markdown
-### Weekly update — <name> — Week <N>
+### Еженедельный апдейт — <имя> — Неделя <N>
 
-**Track:** A            <!-- A (Sprint 1) / B / C / D -->
-**Done:**               <!-- what you actually finished this week -->
+**Трек:** A             <!-- A (Спринт 1) / B / C / D -->
+**Сделано:**            <!-- что реально закончено на этой неделе -->
 -
 
-**PR / artifact:**      <!-- links to PRs, files, experiment IDs -->
+**PR / артефакт:**      <!-- ссылки на PR, файлы, ID экспериментов -->
 -
 
-**Blocker:**            <!-- what's stopping you; "none" is a valid answer -->
+**Блокер:**             <!-- что мешает; "нет" — допустимый ответ -->
 -
 
-**Next step:**          <!-- the ONE next thing you'll do -->
+**Следующий шаг:**      <!-- ОДНО дело, которое сделаете следующим -->
 -
 
-**Help needed:**        <!-- who/what would unblock you; "none" is valid -->
+**Нужна помощь:**       <!-- кто или что разблокирует; "нет" тоже валидно -->
 -
 
-**LLM delegation this week:**
-- Delegated to LLM:     <!-- category, not a transcript -->
-- Verified by hand:     <!-- what you actually checked -->
-- Accepted / rejected:  <!-- e.g. "rejected 1 hallucinated citation" -->
+**Делегирование LLM за неделю:**
+- Делегировано LLM:     <!-- категория, а не расшифровка диалога -->
+- Проверено руками:     <!-- что вы действительно проверили -->
+- Принято / отвергнуто: <!-- например "отверг 1 выдуманную ссылку" -->
 ```
 
-## Field notes
+## Пояснения к полям
 
-- **Done** — finished and verifiable, not "started." If it isn't in a PR or file, it isn't done.
-- **PR / artifact** — a link, always. This is what reviewers and the
-  [contribution ledger](contribution_ledger.md) point to.
-- **Blocker** — be specific ("CI leakage scan fails on my file" beats "stuck").
-- **Next step** — exactly one, so the plan stays legible.
-- **Help needed** — name the person or resource; don't wait to be asked.
-- **LLM delegation** — required, per the [LLM-use policy](llm_use_policy.md). Disclosing a rejected
-  LLM output is a positive signal.
+- **Сделано** — законченное и проверяемое, а не «начал». Если этого нет в PR или файле — это не сделано.
+- **PR / артефакт** — ссылка, всегда. Именно на неё указывают рецензенты и
+  [реестр вкладов](contribution_ledger.md).
+- **Блокер** — конкретно («скан утечки в CI падает на моём файле» лучше, чем «застрял»).
+- **Следующий шаг** — ровно один, чтобы план оставался читаемым.
+- **Нужна помощь** — назовите человека или ресурс; не ждите, пока спросят.
+- **Делегирование LLM** — обязательно, по [политике использования LLM](llm_use_policy.md).
+  Раскрытый отвергнутый вывод LLM — положительный сигнал.

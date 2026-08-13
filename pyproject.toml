@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sciaudit-stress"
 version = "0.0.1"
-description = "SciAudit-Stress: evidence-sufficiency stress testing for empirical ML auditing — central public rail."
+description = "SciAudit-Stress: стресс-тестирование достаточности evidence для аудита эмпирических ML-утверждений — центральная публичная рельса."
 requires-python = ">=3.10"
 dependencies = []
 
-# Dev tooling (PEP 735). Installed by default with `uv sync`.
-# Add more with `uv add --dev <pkg>`.
+# Инструменты разработки (PEP 735). Ставятся по умолчанию через `uv sync`.
+# Добавить ещё: `uv add --dev <pkg>`.
 [dependency-groups]
 dev = [
     "pytest>=8",

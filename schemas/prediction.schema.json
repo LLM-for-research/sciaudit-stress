@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sciaudit-stress/schemas/prediction.schema.json",
-  "title": "SciAudit-Stress prediction object",
-  "description": "One system prediction for one Track A instance. Required: instance_id, verdict, confidence, predicted_eids, issue_tags. Abstention and runtime/cost fields are optional but strongly recommended; baselines always emit them.",
+  "title": "Объект-предсказание SciAudit-Stress",
+  "description": "Одно предсказание системы для одного инстанса Track A. Обязательны: instance_id, verdict, confidence, predicted_eids, issue_tags. Поля отказа, времени и стоимости необязательны, но настоятельно рекомендуются; бейзлайны пишут их всегда.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -22,7 +22,7 @@
     "predicted_eids": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Evidence IDs the system relied on. Must come from the instance's allowed_evidence_ids."
+      "description": "ID evidence, на которые опиралась система. Обязаны браться из allowed_evidence_ids этого инстанса."
     },
     "issue_tags": {
       "type": "array",

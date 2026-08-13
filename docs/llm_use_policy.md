@@ -1,64 +1,71 @@
-# Responsible LLM-use policy
+# Политика ответственного использования LLM
 
-This project is *about* responsible research delegation, so how we use LLMs is part of the science,
-not a side note. The principle is one sentence:
+Проект *про* ответственное делегирование в исследованиях, поэтому то, как мы сами используем LLM, —
+часть науки, а не сноска. Принцип умещается в одно предложение:
 
-> **Use LLMs as assistants, never as authorities.**
-
----
-
-## What LLMs **may** do
-
-- Help you **draft** — docs, rationales, PR descriptions, first passes at text.
-- Help you **code** — scaffolding, refactors, tests, debugging.
-- Help you **brainstorm** — possible issue tags, counterarguments, edge cases, designs.
-- **Summarize supplied evidence** and **check arithmetic** over visible evidence.
-
-## What LLMs **may not** do
-
-- **Be the final labeler.** An LLM must never set a gold verdict, gold evidence set, or gold issue
-  tags. Those are human-adjudicated.
-- **Be trusted without verification.** Every label and every evidence judgment an LLM proposes must
-  be **checked by a human** against the actual evidence before it counts.
-- **See hidden or private material.** Never paste hidden-evaluation inputs, gold labels, stress
-  metadata, or provenance into an external chatbot or paid API. Hidden material stays in the
-  approved, controlled environment.
-- **Bring in outside evidence** for a bounded audit task. Track A judges *only* from the supplied
-  evidence pack; asking an LLM to "look it up" breaks the measurement.
-
-## The rule for evaluated systems
-
-Submitted, *evaluated* systems must run on **approved open/free/local models only** — no paid or
-hidden external APIs. (You may privately use any LLM as a *development* assistant, as long as you
-disclose meaningful use and verify outputs.)
+> **LLM — ассистент, но никогда не инстанция, выносящая решение.**
 
 ---
 
-## What "verify" concretely means
+## Что LLM **можно**
 
-Before you accept an LLM's output as fact:
+- Помогать **писать черновики** — документацию, обоснования, описания PR, первые версии текста.
+- Помогать **кодить** — каркасы, рефакторинг, тесты, отладку.
+- Помогать **придумывать варианты** — возможные issue-теги, контраргументы, краевые случаи, дизайн.
+- **Пересказывать предоставленный evidence** и **проверять арифметику** по видимому evidence.
 
-| The LLM claimed… | You verify by… |
+## Что LLM **нельзя**
+
+- **Быть финальным разметчиком.** LLM не имеет права проставлять gold-вердикт, gold-набор evidence
+  или gold-issue-теги. Это решает человек через арбитраж.
+- **Считаться источником истины без проверки.** Любая метка и любое суждение об evidence,
+  предложенные LLM, обязаны быть **проверены человеком** по самому evidence, прежде чем засчитаны.
+- **Видеть скрытый или приватный материал.** Никогда не вставляйте во внешний чат-бот или
+  неодобренный API скрытые входы, gold-метки, стресс-метаданные и провенанс. Скрытый материал
+  остаётся в одобренной контролируемой среде.
+- **Приносить внешний evidence** в задачу с ограниченным контекстом. Track A судит *только* по
+  предоставленному evidence pack; просьба «погугли» ломает измерение.
+
+## Правило для оцениваемых систем
+
+Сданные, *оцениваемые* системы обязаны работать на **одобренной открытой модели**. Начиная с issue
+#12 модель дёргается по OpenAI-совместимому API с ключом (локальный vLLM, университетский шлюз или
+другой совместимый эндпоинт), а не грузится весами — поэтому правило ограничивает *саму модель*, а
+не транспорт. Конкретно: объявите профиль из `configs/models.yaml`, входящий в
+`approved_profiles`, и укажите идентификатор модели в `system_info.model`.
+
+Сам ключ никогда не попадает ни в репозиторий, ни в файл предсказаний, ни в лог — он берётся из
+переменной окружения, названной в профиле. (Частным образом использовать любую LLM как *ассистента
+разработки* можно, если вы раскрываете значимое использование и проверяете результат.)
+
+---
+
+## Что конкретно значит «проверить»
+
+Прежде чем принять вывод LLM за факт:
+
+| LLM утверждает… | Вы проверяете… |
 |---|---|
-| a verdict / issue tag | re-reading the evidence pack yourself and confirming it follows |
-| a number or comparison | checking the value against the evidence text/table |
-| a citation or reference | confirming it actually exists and says what's claimed |
-| working code | running it — tests pass, output is schema-valid |
+| вердикт или issue-тег | перечитывая evidence pack самостоятельно и убеждаясь, что вывод следует из него |
+| число или сравнение | сверяя значение с текстом или таблицей в evidence |
+| ссылку на источник | убеждаясь, что источник существует и говорит именно это |
+| работающий код | запуская его: тесты зелёные, выход валиден по схеме |
 
-Common failure modes to watch for: hallucinated citations, wrong evidence attribution,
-percent-vs-percentage-point confusion, and overconfident conclusions.
+Типичные режимы отказа, за которыми стоит следить: выдуманные ссылки, приписывание не тому
+evidence, путаница процентов с процентными пунктами, чрезмерно уверенные выводы.
 
 ---
 
-## Disclosure
+## Раскрытие
 
-Every weekly update and every real system carries a short delegation record. In your
-[weekly update](weekly_update_template.md) and [system card](system_card_template.md), state:
+Каждый еженедельный апдейт и каждая настоящая система несут короткую запись о делегировании. В
+[еженедельном апдейте](weekly_update_template.md) и [карточке системы](system_card_template.md)
+укажите:
 
-- what you delegated to an LLM (a category, not a full transcript),
-- what you verified by hand,
-- what you accepted, corrected, or rejected, and
-- any failure you observed.
+- что вы делегировали LLM (категорию, не расшифровку диалога),
+- что проверили руками,
+- что приняли, исправили или отвергли,
+- какие сбои заметили.
 
-Honest disclosure of a rejected LLM output is a *positive* signal — it's exactly the delegation
-judgment this project studies.
+Честно раскрытый отвергнутый вывод LLM — *положительный* сигнал: это ровно то суждение о
+делегировании, которое проект и изучает.

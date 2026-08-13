@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""B0 — always-insufficient baseline (staff manual §11.2).
+"""B0 — бейзлайн «всегда insufficient» (мануал §11.2).
 
-A format-valid trivial system: it always returns ``insufficient`` with no
-evidence. Its purpose is schema/evaluator sanity — the scientific lower bound
-every team must reproduce before claiming innovation (§11.1). It uses no model,
-no retrieval, and only the Python standard library.
+Тривиальная система, валидная по формату: всегда возвращает ``insufficient`` без
+единого evidence. Её задача — проверять работоспособность схем и evaluator'а;
+это научная нижняя граница, которую обязана воспроизвести каждая команда, прежде
+чем заявлять об улучшении (§11.1). Ни модели, ни retrieval — только стандартная
+библиотека Python.
 
-Run:
+Запуск:
     python -m sciaudit.baselines.b0_always_insufficient --input in.jsonl --output out.jsonl
 """
 from __future__ import annotations
@@ -17,7 +18,7 @@ import sys
 
 
 def predict(instance: dict) -> dict:
-    """Return the trivial always-insufficient prediction for one instance."""
+    """Вернуть тривиальное предсказание «всегда insufficient» для одного инстанса."""
     return {
         "instance_id": instance["instance_id"],
         "verdict": "insufficient",
@@ -38,7 +39,7 @@ def predict(instance: dict) -> dict:
 
 
 def run(input_path: str, output_path: str) -> int:
-    """Read a student-input JSONL, write one prediction per line. Returns count."""
+    """Прочитать JSONL со входами и записать по предсказанию на строку. Вернуть их число."""
     n = 0
     with open(input_path, "r", encoding="utf-8") as fin, \
             open(output_path, "w", encoding="utf-8") as fout:
@@ -53,12 +54,12 @@ def run(input_path: str, output_path: str) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="B0 always-insufficient baseline.")
-    parser.add_argument("--input", required=True, help="Path to student-input JSONL.")
-    parser.add_argument("--output", required=True, help="Path to write prediction JSONL.")
+    parser = argparse.ArgumentParser(description="Бейзлайн B0 «всегда insufficient».")
+    parser.add_argument("--input", required=True, help="Путь к JSONL со входами.")
+    parser.add_argument("--output", required=True, help="Путь для записи JSONL с предсказаниями.")
     args = parser.parse_args(argv)
     n = run(args.input, args.output)
-    print(f"B0 wrote {n} prediction(s) to {args.output}", file=sys.stderr)
+    print(f"B0: записано предсказаний — {n}, файл {args.output}", file=sys.stderr)
     return 0
 
 

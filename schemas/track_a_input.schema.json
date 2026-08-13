@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sciaudit-stress/schemas/track_a_input.schema.json",
-  "title": "SciAudit-Stress Track A public input instance",
-  "description": "Student/system-facing input for Track A: abstracted paper ID + normalized claim + bounded evidence pack only. additionalProperties:false also guards against leaked private fields (gold verdict, severity, stress metadata, private rationale, provenance).",
+  "title": "Публичный входной инстанс Track A, SciAudit-Stress",
+  "description": "Вход Track A, видимый участникам и системам: только абстрагированный ID статьи, нормализованный claim и ограниченный evidence pack. additionalProperties:false заодно сторожит от просочившихся приватных полей (gold-вердикт, severity, стресс-метаданные, приватное обоснование, провенанс).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -18,7 +18,7 @@
     "paper_id": {
       "type": "string",
       "minLength": 1,
-      "description": "Abstracted paper identifier (e.g. P017). Titles, authors, venues, and URLs stay in the private provenance map."
+      "description": "Абстрагированный идентификатор статьи (например P017). Названия, авторы, площадки и URL остаются в приватной карте провенанса."
     },
     "instance_id": { "type": "string", "minLength": 1 },
     "claim": {
@@ -73,7 +73,7 @@
       "minItems": 1,
       "uniqueItems": true,
       "items": { "type": "string", "minLength": 1 },
-      "description": "The only evidence IDs a system may cite in predicted_eids. Must be a subset of the eids present in evidence_pack."
+      "description": "Единственные ID evidence, на которые система вправе сослаться в predicted_eids. Обязаны быть подмножеством eid из evidence_pack."
     }
   }
 }

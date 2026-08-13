@@ -1,12 +1,12 @@
 [project]
 name = "sciaudit-system"
 version = "0.0.1"
-description = "SciAudit-Stress system (forkable template)."
+description = "Система SciAudit-Stress (шаблон под форк)."
 requires-python = ">=3.11"
-# Add PINNED runtime deps with `uv add`, e.g. `uv add transformers==4.44.2`.
-# Evaluated systems must use approved open models — no paid/hidden APIs (manual §7.4).
+# Рантайм-зависимости добавляйте ЗАКРЕПЛЁННЫМИ через `uv add`, например `uv add transformers==4.44.2`.
+# Оцениваемые системы обязаны работать на одобренных открытых моделях (мануал §7.4).
 dependencies = []
 
-# This is an app (run.py), not an installable package — uv manages deps only.
+# Это приложение (run.py), а не устанавливаемый пакет — uv управляет только зависимостями.
 [tool.uv]
 package = false

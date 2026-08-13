@@ -1,91 +1,96 @@
-# What this is / what this is not
+# Что это такое и чем оно не является
 
-**SciAudit-Stress** is a course-wide **benchmark-and-systems project** for evaluating how open
-LLM research assistants behave when they audit empirical ML claims **under evidence-sufficiency
-stress**. Staff build the rails (schemas, evaluator, baselines, hidden splits); students build and
-stress the systems and the data.
+**SciAudit-Stress** — общекурсовой проект формата **benchmark-and-systems**: мы измеряем, как
+открытые LLM-ассистенты ведут себя, когда аудируют эмпирические утверждения из ML-статей **в
+условиях дефицита подтверждающих данных**. Штаб строит рельсы (схемы, evaluator, бейзлайны,
+скрытые сплиты); участники строят системы и данные и нагружают их стрессом.
 
-If you read only one thing, read this: the benchmark is **paper-centered and long-lived**.
-**Sprint 1 (Track A) is the first *runnable slice*, not the final identity of the benchmark.**
+Если читать только одно предложение, читайте это: бенчмарк **центрирован на статьях и рассчитан
+надолго**. **Спринт 1 (Track A) — это первый *запускаемый срез*, а не финальная идентичность
+бенчмарка.**
 
 ---
 
-## What this **is**
+## Чем это **является**
 
-- **Evidence-grounded scientific auditing.** A system is given a normalized claim and a *finite,
-  frozen evidence pack*, and must decide whether the evidence actually warrants the claim.
-- **A traceable, structured task.** Every decision returns a verdict **plus** the evidence IDs it
-  relied on, issue tags, a confidence score, and an abstention flag — so a human can inspect *why*.
-- **A study of delegation.** The real question is *which parts of auditing can be delegated to an
-  LLM, and where a human, a deterministic tool, calibration, or abstention is still required.*
+- **Аудитом научных утверждений, опирающимся на evidence.** Системе дают нормализованный claim и
+  *конечный, замороженный evidence pack*, и она решает, действительно ли этот evidence
+  обосновывает claim.
+- **Прослеживаемой структурированной задачей.** Каждое решение возвращает вердикт **плюс** ID
+  evidence, на которые система опиралась, issue-теги, уверенность и флаг отказа — так человек
+  видит *почему*.
+- **Исследованием делегирования.** Настоящий вопрос — *какие части аудита можно делегировать LLM,
+  а где всё ещё нужен человек, детерминированный инструмент, калибровка или отказ от ответа.*
 
-The verdict space is deliberately sharper than ordinary fact-checking:
+Пространство вердиктов намеренно острее обычного фактчекинга:
 
-| Verdict | Meaning |
+| Вердикт | Смысл |
 |---|---|
-| `warranted` | The supplied evidence justifies the claim within its stated scope. |
-| `overclaimed` | Evidence supports a **weaker** nearby claim, but not the claim as written. |
-| `contradicted` | Evidence directly conflicts with the claim. |
-| `insufficient` | The evidence pack doesn't contain enough to judge the claim. |
+| `warranted` | Предоставленный evidence обосновывает claim в рамках заявленной области. |
+| `overclaimed` | Evidence поддерживает **более слабое** близкое утверждение, но не claim в том виде, как он написан. |
+| `contradicted` | Evidence прямо противоречит claim. |
+| `insufficient` | В evidence pack недостаточно данных, чтобы судить о claim. |
 
-`overclaimed` is the conceptual center: **partial support is not warrant.**
+`overclaimed` — концептуальный центр: **частичная поддержка не есть обоснование.**
 
-## What this **is not**
+## Чем это **не является**
 
-- **Not free-form review generation.** We do not write prose "reviews." Outputs are strict,
-  schema-valid, structured predictions with evidence IDs.
-- **Not automatic final judgment of papers.** The unit of analysis is the **claim–evidence
-  relationship**, not the paper, the authors, or the venue. Paper identities are abstracted.
-- **Not an autonomous AI scientist, a paper-ranking tool, or a peer-review replacement.**
-- **Not a prompt-engineering leaderboard.** Prompt tweaks alone are not a contribution; measurable
-  gains in evidence localization, severe-error reduction, calibration, or abstention are.
+- **Не генерация свободных рецензий.** Мы не пишем прозу-«рецензии». Выход — строгие,
+  валидные по схеме структурированные предсказания с ID evidence.
+- **Не автоматический итоговый вердикт по статьям.** Единица анализа — **связка claim–evidence**,
+  а не статья, авторы или площадка. Идентичность статей абстрагирована.
+- **Не автономный AI-учёный, не ранжировщик статей и не замена рецензированию.**
+- **Не лидерборд промпт-инжиниринга.** Подкрутка промпта сама по себе не вклад; вклад — измеримый
+  выигрыш в локализации evidence, снижении тяжёлых ошибок, калибровке или отказе от ответа.
 
-The single most dangerous behavior we measure is the **severe false-warrant**: calling something
-`warranted` when it is actually overclaimed, contradicted, or insufficient.
+Самое опасное поведение, которое мы измеряем, — **severe false-warrant**: назвать `warranted` то,
+что на самом деле overclaimed, contradicted или insufficient.
 
 ---
 
-## Track A/B/C/D — the roadmap
+## Track A/B/C/D — дорожная карта
 
-The benchmark grows in **maturity tracks**. Each track keeps the same core interface (a system
-takes an instance, returns a strict structured prediction) but widens what an "instance" and a
-"system" may be. **Everyone starts in Track A.** Later tracks open only after the baseline gate.
+Бенчмарк растёт **уровнями зрелости**. Каждый трек сохраняет тот же ядерный интерфейс (система
+берёт инстанс и возвращает строгое структурированное предсказание), но расширяет то, чем может быть
+«инстанс» и «система». **Все начинают с Track A.** Следующие треки открываются только после
+baseline gate.
 
-| Track | Name | What it adds | Long-term capability it enables |
+| Трек | Название | Что добавляет | Какую долгосрочную способность открывает |
 |---|---|---|---|
-| **A** | **Evidence-bounded claim auditing** *(Sprint 1)* | Claim + frozen evidence pack → verdict, evidence IDs, issue tags, confidence, abstention. Bounded, deterministic, no external lookup. | The controlled core: the rail everything else is measured against. |
-| **B** | Retrieval & tool-augmented auditing | Larger contexts, retrieval over evidence, deterministic numeric/table checkers, tool use. | **RAG, tool use.** |
-| **C** | Paper-level & assistant workflows | Multi-claim auditing across a whole paper; assistant-style tasks that chain audits. | **AI reviewing, research assistants.** |
-| **D** | Adaptation & AI-for-science | Fine-tuning (LoRA/QLoRA), multimodal (chart/table), broader scientific-reasoning systems. | **Fine-tuning, AI-for-science systems.** |
+| **A** | **Аудит claim в границах evidence** *(Спринт 1)* | Claim + замороженный evidence pack → вердикт, ID evidence, issue-теги, уверенность, отказ. Ограниченно, детерминированно, без внешнего поиска. | Контролируемое ядро: рельса, относительно которой измеряется всё остальное. |
+| **B** | Аудит с retrieval и инструментами | Более длинные контексты, поиск по evidence, детерминированные численные/табличные чекеры, tool use. | **RAG, tool use.** |
+| **C** | Уровень статьи и ассистентские сценарии | Аудит множества claim по целой статье; ассистентские задачи, сцепляющие аудиты. | **AI-рецензирование, research-ассистенты.** |
+| **D** | Адаптация и AI-for-science | Дообучение (LoRA/QLoRA), мультимодальность (графики/таблицы), более широкие системы научного рассуждения. | **Fine-tuning, AI-for-science.** |
 
-**Track A is the minimal controlled slice — not the benchmark's final identity.** It exists so
-that, before Week 1, the whole pipeline runs end-to-end with a dummy system ("rails before
-trains"). Its bounded, no-external-lookup design is a *measurement choice*, not a ceiling. As the
-data pool grows paper-centered, Tracks B–D reuse the same schemas, evaluator, and leakage
-controls to support RAG, tool use, AI reviewing, research assistants, fine-tuning, and
-AI-for-science — without re-litigating the core contract.
+**Track A — минимальный контролируемый срез, а не финальная идентичность бенчмарка.** Он
+существует ради того, чтобы ещё до Недели 1 весь пайплайн проходил от входа до метрик с
+системой-заглушкой («rails before trains»). Его ограниченность и запрет внешнего поиска — это
+*выбор измерения*, а не потолок. По мере того как пул данных растёт вокруг статей, треки B–D
+переиспользуют те же схемы, evaluator и контроль утечек, чтобы поддержать RAG, tool use,
+AI-рецензирование, research-ассистентов, дообучение и AI-for-science — не пересматривая базовый
+контракт.
 
-> **Don't confuse three different "letters":**
-> - **Tracks A–D** = roadmap maturity levels (this document).
-> - **Tasks A–F** = sub-skills *within* one audit (verdict, evidence localization, issue tags,
->   abstention, stress robustness, human-vs-LLM comparison).
-> - **Baselines B0–B4** = reference systems (control experiments), starting with B0 = always
+> **Не путайте три разных «буквы»:**
+> - **Треки A–D** — уровни зрелости дорожной карты (этот документ).
+> - **Задачи A–F** — под-навыки *внутри* одного аудита (вердикт, локализация evidence, issue-теги,
+>   отказ, устойчивость к стрессу, сравнение человека и LLM).
+> - **Бейзлайны B0–B4** — эталонные системы (контрольные эксперименты), начиная с B0 = всегда
 >   `insufficient`.
 
 ---
 
-## Why the discipline matters (leakage)
+## Почему дисциплина важна (утечки)
 
-Because stress metadata trivially leaks labels (if a system sees `stress_type=evidence_removal` it
-can just guess `insufficient`), the project uses a **hard two-schema separation**:
+Стресс-метаданные тривиально сливают метку (увидев `stress_type=evidence_removal`, система просто
+угадает `insufficient`), поэтому в проекте действует **жёсткое разделение на две схемы**:
 
-- **Student-facing input** = only `(instance_id, claim, evidence_pack)`.
-- **Private evaluator metadata** = stress info, gold labels, provenance, splits — **staff-only,
-  never in this repo.**
+- **Вход, видимый участникам** — только `(instance_id, claim, evidence_pack)`.
+- **Приватные метаданные evaluator'а** — стресс-информация, gold-метки, провенанс, сплиты —
+  **только для штаба, никогда не в этом репозитории.**
 
-You will never commit gold labels, stress fields, or hidden data here. See
-[LLM-use policy](llm_use_policy.md) and the repository `.gitignore`.
+Вы никогда не коммитите сюда gold-метки, стресс-поля или скрытые данные. См.
+[политику использования LLM](llm_use_policy.md) и `.gitignore` репозитория.
 
 ---
 
-**Next:** read the [Week-1 guide](week1_guide.md) and start.
+**Дальше:** прочитайте [гид первой недели](week1_guide.md) и начинайте.

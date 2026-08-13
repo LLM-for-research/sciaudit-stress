@@ -1,9 +1,9 @@
-"""Shared helpers for schema validation CLIs.
+"""Общие помощники для CLI-валидаторов схем.
 
-JSON Schemas live in the top-level ``schemas/`` directory. These helpers add
-the checks JSON Schema alone cannot express: private-field (leakage) scanning,
-duplicate instance IDs, evidence-ID consistency, and prediction/input
-cross-checks.
+Сами JSON Schema лежат в корневой директории ``schemas/``. Здесь добавлены
+проверки, которые одной JSON Schema не выражаются: поиск приватных полей
+(утечки), дубликаты instance_id, согласованность ID evidence и сверка
+предсказаний со входами.
 """
 from __future__ import annotations
 
@@ -14,14 +14,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMAS_DIR = REPO_ROOT / "schemas"
 
 FORBIDDEN_INPUT_KEYS = frozenset({
-    # --- gold labels ---
+    # --- gold-метки ---
     "gold",
     "gold_verdict",
     "verdict",
     "expected_verdict",
     "supporting_eids",
     "severity",
-    # --- stress metadata ---
+    # --- стресс-метаданные ---
     "stress",
     "stress_type",
     "transformation_type",
@@ -31,7 +31,7 @@ FORBIDDEN_INPUT_KEYS = frozenset({
     "scope_expansion",
     "numeric_perturbation",
     "distractor_flag",
-    # --- private rationale / review ---
+    # --- приватное обоснование и ревью ---
     "private_rationale",
     "rationale_private",
     "review",
@@ -41,7 +41,7 @@ FORBIDDEN_INPUT_KEYS = frozenset({
     "reviewer",
     "adjudication_note",
     "TA_note",
-    # --- provenance / licensing ---
+    # --- провенанс и лицензии ---
     "provenance",
     "provenance_map",
     "provenance_ref",
@@ -53,7 +53,7 @@ FORBIDDEN_INPUT_KEYS = frozenset({
     "venue",
     "license_status",
     "is_distractor",
-    # --- split assignment (leaks which slice an instance belongs to) ---
+    # --- принадлежность к сплиту (выдаёт, в какой срез попал инстанс) ---
     "split",
     "private_slice",
     "GoldHidden",
@@ -68,7 +68,7 @@ def load_schema(name: str) -> dict:
 
 
 def read_jsonl(path: str | Path) -> list[tuple[int, dict]]:
-    """Return [(line_number, object), ...]; raises ValueError on bad JSON."""
+    """Вернуть [(номер_строки, объект), ...]; бросает ValueError на битом JSON."""
     rows = []
     with open(path, "r", encoding="utf-8-sig") as f:
         for line_no, line in enumerate(f, start=1):
@@ -78,9 +78,9 @@ def read_jsonl(path: str | Path) -> list[tuple[int, dict]]:
             try:
                 obj = json.loads(line)
             except json.JSONDecodeError as e:
-                raise ValueError(f"line {line_no}: invalid JSON: {e}") from e
+                raise ValueError(f"строка {line_no}: битый JSON: {e}") from e
             if not isinstance(obj, dict):
-                raise ValueError(f"line {line_no}: expected a JSON object")
+                raise ValueError(f"строка {line_no}: ожидался объект JSON")
             rows.append((line_no, obj))
     return rows
 
@@ -92,15 +92,14 @@ def find_forbidden(
     *,
     scan_values: bool = True,
 ) -> list[str]:
-    """Recursively locate forbidden keys *and* forbidden string values.
+    """Рекурсивно найти запрещённые ключи *и* запрещённые строковые значения.
 
-    Staff manual requires both directions: a private name is a
-    leak whether it appears as ``{"stress_type": ...}`` or as
-    ``{"slice": "AutoStressHidden"}``. Matching on values is exact equality, so
-    prose that merely mentions a forbidden word ("the authors report ...") does
-    not trip the scan.
+    Мануал требует обоих направлений: приватное имя — утечка и когда оно стоит
+    ключом ``{"stress_type": ...}``, и когда значением ``{"slice":
+    "AutoStressHidden"}``. По значениям сравнение точное, поэтому проза, просто
+    упоминающая запрещённое слово («the authors report ...»), ворота не роняет.
 
-    Returns JSONPath-like locations; value hits are rendered as
+    Возвращает координаты в духе JSONPath; попадание по значению печатается как
     ``$.slice == 'AutoStressHidden'``.
     """
     hits = []
@@ -122,13 +121,13 @@ def find_forbidden(
 
 
 def find_forbidden_keys(obj, forbidden=FORBIDDEN_INPUT_KEYS, path="$") -> list[str]:
-    """Key-only variant of :func:`find_forbidden` (kept for callers that
-    deliberately want to ignore values)."""
+    """Вариант :func:`find_forbidden` только по ключам (для тех вызовов, что
+    осознанно игнорируют значения)."""
     return find_forbidden(obj, forbidden, path, scan_values=False)
 
 
 def schema_errors(instance: dict, schema: dict) -> list[str]:
-    """Validate one object against a JSON Schema; returns error strings."""
+    """Проверить один объект по JSON Schema; вернуть строки ошибок."""
     import jsonschema
 
     validator = jsonschema.Draft202012Validator(schema)
@@ -142,11 +141,11 @@ def schema_errors(instance: dict, schema: dict) -> list[str]:
 
 
 def report(name: str, total: int, problems: list[str]) -> int:
-    """Print a summary; return process exit code (0 ok, 1 fail)."""
+    """Напечатать сводку; вернуть код возврата процесса (0 — ок, 1 — провал)."""
     if problems:
         for p in problems:
             print(f"ERROR: {p}")
-        print(f"{name}: FAIL — {len(problems)} error(s) across {total} object(s)")
+        print(f"{name}: FAIL — ошибок {len(problems)} на {total} объект(ов)")
         return 1
-    print(f"{name}: OK — {total} valid object(s)")
+    print(f"{name}: OK — {total} объект(ов), всё валидно")
     return 0

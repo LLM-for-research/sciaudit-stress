@@ -1,117 +1,120 @@
-# Stress-test methodology
+# Методология стресс-тестирования
 
-This document defines the first version of stress transformations for SciAudit-Stress benchmark construction.
+Документ задаёт первую версию стресс-трансформаций для построения бенчмарка SciAudit-Stress.
 
-A stress case tests whether a system can judge if a claim is warranted by the supplied evidence pack. The system must not rely on hidden metadata, paper reputation, or external knowledge.
+Стресс-кейс проверяет, способна ли система решить, обоснован ли claim предоставленным evidence
+pack. Система не должна опираться на скрытые метаданные, репутацию статьи или внешние знания.
 
-## Verdict labels
+## Метки вердиктов
 
-- `warranted`: the evidence pack supports the claim within its stated scope.
-- `overclaimed`: the evidence supports a weaker claim, but not the stronger transformed claim.
-- `contradicted`: the evidence directly conflicts with the claim.
-- `insufficient`: the evidence does not contain enough information to judge or justify the claim.
+- `warranted`: evidence pack поддерживает claim в рамках заявленной области.
+- `overclaimed`: evidence поддерживает более слабое утверждение, но не усиленный claim.
+- `contradicted`: evidence прямо противоречит claim.
+- `insufficient`: в evidence недостаточно информации, чтобы судить о claim или обосновать его.
 
-## Stress transformation types
+## Типы стресс-трансформаций
 
-### 1. Claim strengthening
+### 1. Усиление claim
 
-Make the claim stronger than the evidence supports.
+Сделать claim сильнее, чем позволяет evidence.
 
-Example:
+Пример:
 
-- Original claim: The method improves accuracy on Dataset A.
-- Transformed claim: The method consistently improves accuracy on all tested datasets.
-- Expected verdict: `overclaimed`
+- Исходный claim: The method improves accuracy on Dataset A.
+- Трансформированный claim: The method consistently improves accuracy on all tested datasets.
+- Ожидаемый вердикт: `overclaimed`
 
-### 2. Scope expansion
+### 2. Расширение области
 
-Expand the claim from a narrow setting to a broader setting.
+Расширить claim с узкой постановки на широкую.
 
-Example:
+Пример:
 
-- Original claim: The method works better on small datasets.
-- Transformed claim: The method works better across all dataset sizes.
-- Expected verdict: `overclaimed`
+- Исходный claim: The method works better on small datasets.
+- Трансформированный claim: The method works better across all dataset sizes.
+- Ожидаемый вердикт: `overclaimed`
 
-### 3. Evidence removal
+### 3. Удаление evidence
 
-Remove key supporting evidence from the evidence pack.
+Убрать из evidence pack ключевое подтверждение.
 
-Example:
+Пример:
 
-- Original claim: The ablation shows that component X improves performance.
-- Evidence after transformation: The ablation table is removed.
-- Expected verdict: `insufficient`
+- Исходный claim: The ablation shows that component X improves performance.
+- Evidence после трансформации: таблица с абляцией удалена.
+- Ожидаемый вердикт: `insufficient`
 
-### 4. Distractor evidence
+### 4. Отвлекающий evidence
 
-Add evidence that is topically related but does not support the claim.
+Добавить evidence, тематически близкий, но claim не поддерживающий.
 
-Example:
+Пример:
 
 - Claim: The model improves robustness.
-- Distractor evidence: Training speed comparison.
-- Expected verdict: usually `insufficient` or `overclaimed`
+- Отвлекающий evidence: сравнение скорости обучения.
+- Ожидаемый вердикт: обычно `insufficient` или `overclaimed`
 
-### 5. Numeric mismatch
+### 5. Числовое расхождение
 
-Change the claim so that it conflicts with reported numbers.
+Изменить claim так, чтобы он расходился с приведёнными числами.
 
-Example:
+Пример:
 
 - Evidence: Method X = 88.1, Baseline = 90.4.
 - Claim: Method X outperforms the baseline.
-- Expected verdict: `contradicted`
+- Ожидаемый вердикт: `contradicted`
 
-### 6. Table/caption mismatch
+### 6. Расхождение таблицы и подписи
 
-Create disagreement between a table value and a claim or caption.
+Создать противоречие между значением в таблице и claim или подписью.
 
-Example:
+Пример:
 
-- Table says accuracy decreases.
-- Claim says accuracy increases.
-- Expected verdict: `contradicted`
+- В таблице точность падает.
+- В claim точность растёт.
+- Ожидаемый вердикт: `contradicted`
 
-### 7. Missing baseline
+### 7. Отсутствующий бейзлайн
 
-Make a claim about outperforming a baseline that is not present in the evidence pack.
+Сделать claim о превосходстве над бейзлайном, которого нет в evidence pack.
 
-Example:
+Пример:
 
 - Claim: The method outperforms BERT.
-- Evidence: only RoBERTa and T5 are reported.
-- Expected verdict: `insufficient`
+- Evidence: приведены только RoBERTa и T5.
+- Ожидаемый вердикт: `insufficient`
 
-### 8. Weak ablation
+### 8. Слабая абляция
 
-Make an ablation claim stronger than the ablation evidence allows.
+Сделать claim об абляции сильнее, чем позволяет сама абляция.
 
-Example:
+Пример:
 
-- Evidence: one small ablation result.
-- Claim: the component is essential across all tasks.
-- Expected verdict: `overclaimed`
+- Evidence: один небольшой результат абляции.
+- Claim: компонент необходим во всех задачах.
+- Ожидаемый вердикт: `overclaimed`
 
-### 9. Non-comparable baseline
+### 9. Несопоставимый бейзлайн
 
-Use evidence where systems are compared under different settings.
+Взять evidence, где системы сравниваются в разных условиях.
 
-Example:
+Пример:
 
-- Method X uses extra data, baseline does not.
-- Claim: Method X fairly outperforms the baseline.
-- Expected verdict: `overclaimed` or `insufficient`
+- Method X использует дополнительные данные, бейзлайн — нет.
+- Claim: Method X честно превосходит бейзлайн.
+- Ожидаемый вердикт: `overclaimed` или `insufficient`
 
-## Public/private separation
+## Разделение публичного и приватного
 
-Toy stress cases may include expected verdicts for documentation and testing. However, public input files must not include gold labels, stress metadata, transformation type, private provenance, or validation notes.
+Учебные стресс-кейсы могут содержать ожидаемые вердикты — для документации и тестов. Но публичные
+входные файлы не должны содержать gold-метки, стресс-метаданные, тип трансформации, приватный
+провенанс и заметки валидации.
 
-Student-facing input should contain only the fields of `schemas/track_a_input.schema.json`:
+Вход, видимый участникам, содержит только поля `schemas/track_a_input.schema.json`:
 
 - `schema_version`
-- `paper_id` (abstracted; the real paper lives in the private provenance map)
-- `instance_id` (non-semantic `sas_` ID)
-- `claim` (text, `claim_type`, scope)
-- `evidence_pack` (frozen units with `eid`, `source_kind`, `modality`, `text`)
-- `allowed_evidence_ids` (the only IDs a prediction may cite)
+- `paper_id` (абстрагирован; настоящая статья живёт в приватной карте провенанса)
+- `instance_id` (несемантический ID вида `sas_`)
+- `claim` (текст, `claim_type`, область)
+- `evidence_pack` (замороженные единицы с `eid`, `source_kind`, `modality`, `text`)
+- `allowed_evidence_ids` (единственные ID, на которые вправе сослаться предсказание)

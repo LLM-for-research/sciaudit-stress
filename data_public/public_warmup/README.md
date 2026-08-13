@@ -1,27 +1,27 @@
-# Public warm-up slice (Track A)
+# Публичный warm-up срез (Track A)
 
-First runnable public dataset for the readiness loop. Everything here is
-**synthetic placeholder content** — see [manifest.json](manifest.json) for
-per-instance provenance notes and the replacement policy once the controlled
-paper pool (Task 2) lands.
+Первый запускаемый публичный датасет для readiness-loop. Всё содержимое здесь —
+**синтетическая заглушка**; пометки о происхождении каждого инстанса и политика
+замены лежат в [manifest.json](manifest.json), их применяют, когда появится
+контролируемый пул статей (Task 2).
 
-| File | Contents |
+| Файл | Содержимое |
 |---|---|
-| `inputs.jsonl` | 17 Track A input instances (`track_a_input_v1` schema) |
-| `gold.jsonl` | 17 gold records, one per `instance_id` (format of `examples/toy_gold.jsonl`) |
-| `manifest.json` | Staff-side provenance: synthetic markers, neutral origins, dataset shape (never merged into inputs) |
+| `inputs.jsonl` | 17 входных инстансов Track A (схема `track_a_input_v1`) |
+| `gold.jsonl` | 17 gold-записей, по одной на `instance_id` (формат `examples/toy_gold.jsonl`) |
+| `manifest.json` | Штабной провенанс: пометки синтетики, нейтральные источники, форма датасета (в inputs не сливается) |
 
-Properties guaranteed by `tests/test_public_warmup.py`:
+Свойства, которые держит `tests/test_public_warmup.py`:
 
-- all four verdicts are present and none exceeds 50%;
-- non-semantic `sas_` instance IDs — the verdict cannot be guessed from metadata;
-- no private fields in `inputs.jsonl` — enforced by the Track A input validator
-  and the leakage tests;
-- the same evidence pack can support claims that are judged differently, so
-  the verdict is not readable from the evidence alone;
-- B0 runs on `inputs.jsonl` and the evaluator produces metrics without errors.
+- присутствуют все четыре вердикта, и ни один не занимает больше 50%;
+- `instance_id` несемантические (`sas_` + случайный суффикс) — вердикт по ним не угадывается;
+- в `inputs.jsonl` нет приватных полей: это держат валидатор входов Track A и
+  тесты на утечку;
+- один и тот же evidence pack может нести claim'ы с разными вердиктами, поэтому
+  вердикт не читается из одного только evidence;
+- B0 отрабатывает на `inputs.jsonl`, и evaluator считает по нему метрики без ошибок.
 
-## Local verification
+## Локальная проверка
 
 ```bash
 uv run python -m sciaudit.schemas.validate_inputs data_public/public_warmup/inputs.jsonl

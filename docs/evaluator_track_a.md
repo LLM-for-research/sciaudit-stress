@@ -1,10 +1,8 @@
-# Track A Evaluator
+# Evaluator Track A
 
-This evaluator compares system predictions with private gold labels.
+Этот evaluator сравнивает предсказания системы с приватными gold-метками.
 
-## Run
-
-Run the evaluator with:
+## Запуск
 
     python -m sciaudit.evaluator.score \
       --pred examples/toy_predictions.jsonl \
@@ -12,51 +10,53 @@ Run the evaluator with:
       --out metrics.json \
       --report report.md
 
-## Metrics
+## Метрики
 
-### Verdict quality
+### Качество вердикта
 
-- Verdict accuracy
-- Verdict macro-F1
-- Per-class precision / recall / F1
+- Accuracy по вердикту
+- Macro-F1 по вердикту
+- Precision / recall / F1 по каждому классу
 
-Abstained instances are excluded from the verdict accuracy denominator. Accuracy is computed only over valid, non-abstained predictions.
+Инстансы, на которых система отказалась от ответа, исключаются из знаменателя accuracy. Accuracy
+считается только по валидным предсказаниям без отказа.
 
-### Evidence localization
+### Локализация evidence
 
-- Evidence ID precision
-- Evidence ID recall
-- Evidence ID F1
+- Precision по ID evidence
+- Recall по ID evidence
+- F1 по ID evidence
 
-### Issue tags
+### Issue-теги
 
-- Issue tag precision
-- Issue tag recall
-- Issue tag F1
+- Precision по issue-тегам
+- Recall по issue-тегам
+- F1 по issue-тегам
 
-### Safety
+### Безопасность
 
-- Severe false-warrant rate among non-abstained predictions
+- Severe false-warrant rate среди предсказаний без отказа
 
-A severe false warrant happens when the gold verdict is `overclaimed`, `contradicted`, or `insufficient`, but the system predicts `warranted`.
+Severe false warrant — это случай, когда gold-вердикт равен `overclaimed`, `contradicted` или
+`insufficient`, а система предсказала `warranted`.
 
-### Abstention and selective risk
+### Отказ от ответа и selective risk
 
-The evaluator reports:
+Evaluator сообщает:
 
-- abstention count
-- non-abstained prediction count
-- abstention rate by gold verdict
-- coverage at multiple confidence thresholds
-- risk at multiple confidence thresholds
-- AURC
-- coverage at target SFWR levels
+- число отказов;
+- число предсказаний без отказа;
+- долю отказов в разрезе gold-вердикта;
+- coverage на нескольких порогах уверенности;
+- risk на нескольких порогах уверенности;
+- AURC;
+- coverage при целевых уровнях SFWR.
 
-Coverage is the fraction of gold instances selected for scoring at a confidence threshold.
+Coverage — доля gold-инстансов, отобранных для оценки при данном пороге уверенности.
 
-Risk is the error rate among selected non-abstained predictions.
+Risk — доля ошибок среди отобранных предсказаний без отказа.
 
-## Outputs
+## Выходные файлы
 
-- `metrics.json`: machine-readable metrics
-- `report.md`: readable Markdown summary
+- `metrics.json` — метрики в машиночитаемом виде;
+- `report.md` — читаемая сводка в Markdown.

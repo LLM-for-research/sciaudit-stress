@@ -1,8 +1,9 @@
-"""B0 baseline output checks (staff manual §11.2; test named in Listing 5).
+"""Проверки выхода бейзлайна B0 (мануал §11.2; тест назван в Listing 5).
 
-Verifies the always-insufficient baseline runs as a module and emits one
-schema-valid prediction per input, each with verdict == "insufficient".
-Schema validation runs only if `jsonschema` is installed.
+Убеждаемся, что бейзлайн «всегда insufficient» запускается как модуль и выдаёт
+по одному валидному по схеме предсказанию на каждый вход, и в каждом
+verdict == "insufficient". Валидация по схеме идёт, только если установлен
+`jsonschema`.
 """
 import json
 import subprocess
@@ -40,11 +41,11 @@ def test_b0_emits_one_insufficient_prediction_per_input(tmp_path):
     inputs = _read_jsonl(SAMPLE_INPUTS)
     preds = _read_jsonl(out)
 
-    assert len(preds) == len(inputs), "one prediction per input"
+    assert len(preds) == len(inputs), "по одному предсказанию на вход"
     assert [p["instance_id"] for p in preds] == [x["instance_id"] for x in inputs]
     for p in preds:
-        assert REQUIRED.issubset(p), f"missing keys: {REQUIRED - set(p)}"
-        assert p["verdict"] == "insufficient", "B0 is always insufficient"
+        assert REQUIRED.issubset(p), f"нет ключей: {REQUIRED - set(p)}"
+        assert p["verdict"] == "insufficient", "B0 всегда отвечает insufficient"
 
 
 def test_b0_predictions_match_schema_if_jsonschema_available(tmp_path):
@@ -52,7 +53,7 @@ def test_b0_predictions_match_schema_if_jsonschema_available(tmp_path):
         import jsonschema
     except ImportError:
         import pytest
-        pytest.skip("jsonschema not installed")
+        pytest.skip("jsonschema не установлен")
 
     schema = json.loads(PRED_SCHEMA.read_text(encoding="utf-8"))
     out = tmp_path / "b0.jsonl"

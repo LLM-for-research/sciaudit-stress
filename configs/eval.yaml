@@ -1,5 +1,5 @@
-# Evaluation paths/settings. Finalized by Schema/evaluator TA (Task 5).
-# Placeholder paths; files appear once Task 2/3 produce data.
+# Пути и настройки оценки. Финализирует TA по схемам и evaluator'у (Task 5).
+# Пути пока заглушки; файлы появятся, когда Task 2/3 отдадут данные.
 
 public_warmup:
   inputs: data_public/public_warmup/inputs.jsonl

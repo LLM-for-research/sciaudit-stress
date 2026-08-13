@@ -1,12 +1,12 @@
-"""Tests for the recursive forbidden-key scan.
+"""Тесты рекурсивного скана запрещённых ключей.
 
-Covers the acceptance criteria of the leakage gate:
-- the repo's own public trees scan clean (exit 0);
-- a planted private field is caught, with its location reported (exit 1);
-- keys *and* string values are scanned;
-- profiles keep legitimate gold/prediction files from failing, while still
-  catching stress/provenance/split material inside them;
-- the forbidden list covers the staff manual's list (Listing 4).
+Покрывают критерии приёмки ворот утечки:
+- собственные публичные деревья репозитория сканируются чисто (код 0);
+- подложенное приватное поле ловится, координата печатается (код 1);
+- сканируются и ключи, *и* строковые значения;
+- профили не дают падать законным файлам gold и предсказаний, но всё ещё
+  ловят внутри них стресс-метаданные, провенанс и сплит;
+- список запрещённого покрывает список из мануала (Listing 4).
 """
 import json
 import subprocess
@@ -29,7 +29,7 @@ REPO = Path(__file__).resolve().parents[1]
 EXAMPLES = REPO / "examples"
 DATA_PUBLIC = REPO / "data_public"
 
-# The staff manual's own list (Listing 4). The project may extend it, never shrink it.
+# Список из самого мануала (Listing 4). Проект вправе его расширять, но не сокращать.
 MANUAL_LISTING_4 = [
     "gold", "gold_verdict", "verdict", "supporting_eids", "severity",
     "stress", "stress_type", "is_stress_case", "seed_instance_id",
@@ -64,14 +64,14 @@ def _cli(*args):
     )
 
 
-# --- the forbidden list itself -------------------------------------------------
+# --- сам список запрещённого ----------------------------------------------------
 
 @pytest.mark.parametrize("key", MANUAL_LISTING_4)
 def test_manual_forbidden_key_is_covered(key):
     assert key in FORBIDDEN_INPUT_KEYS
 
 
-# --- key and value scanning ----------------------------------------------------
+# --- скан ключей и значений -----------------------------------------------------
 
 def test_finds_nested_forbidden_key():
     hits = find_forbidden({"a": {"b": {"gold": {"verdict": "warranted"}}}})
@@ -89,7 +89,7 @@ def test_finds_forbidden_value_inside_list():
 
 
 def test_prose_mentioning_a_forbidden_word_is_not_a_leak():
-    # exact-match only: free text must not trip the gate
+    # только точное совпадение: свободный текст не должен ронять ворота
     hits = find_forbidden({"text": "The authors report a gold standard split of the data."})
     assert hits == []
 
@@ -98,7 +98,7 @@ def test_key_only_variant_ignores_values():
     assert find_forbidden_keys({"slice_name": "AutoStressHidden"}) == []
 
 
-# --- profiles ------------------------------------------------------------------
+# --- профили --------------------------------------------------------------------
 
 def test_gold_profile_allows_the_label_but_not_stress_metadata():
     forbidden = PROFILES["gold"]
@@ -137,10 +137,10 @@ def test_classify_assigns_expected_profile(tmp_path, name, expected):
 def test_every_exemption_carries_a_reason():
     for glob, profile, reason in DEFAULT_RULES:
         assert profile in PROFILES, glob
-        assert reason and reason != "(no reason given)", glob
+        assert reason and reason != "(причина не указана)", glob
 
 
-# --- scanning real trees -------------------------------------------------------
+# --- скан настоящих деревьев ----------------------------------------------------
 
 def test_repo_public_trees_scan_clean():
     leaks, examined = scan([EXAMPLES, DATA_PUBLIC])
@@ -152,7 +152,7 @@ def test_scan_catches_planted_leak(tmp_path):
     bad = dict(VALID_INPUT, gold={"verdict": "overclaimed"})
     _write_jsonl(tmp_path / "inputs.jsonl", [VALID_INPUT, bad])
     leaks, _ = scan([tmp_path])
-    # nested forbidden keys are each reported: $.gold and $.gold.verdict
+    # вложенные запрещённые ключи сообщаются по отдельности: $.gold и $.gold.verdict
     assert leaks and all("inputs.jsonl:2" in leak for leak in leaks)
     assert any(leak.endswith("$.gold") for leak in leaks)
 
@@ -192,21 +192,21 @@ def test_missing_target_is_an_error():
 
 
 def test_forced_profile_overrides_classification(tmp_path):
-    # a gold file scanned under the input profile must fail: the override exists
-    # so a stricter run can prove a file carries no label at all
+    # gold-файл, просканированный под профилем input, обязан упасть: переопределение
+    # существует ровно для того, чтобы более строгий прогон доказал отсутствие метки
     _write_jsonl(tmp_path / "gold.jsonl", [{"instance_id": "sas_001",
                                             "gold": {"verdict": "warranted"}}])
     assert scan([tmp_path])[0] == []
     assert scan([tmp_path], forced_profile="input")[0]
 
 
-# --- rules override ------------------------------------------------------------
+# --- переопределение правил -----------------------------------------------------
 
 def test_rules_override_is_honoured(tmp_path):
     _write_jsonl(tmp_path / "custom.jsonl", [{"gold": {"verdict": "warranted"}}])
     rules_file = tmp_path / "rules.json"
     rules_file.write_text(
-        json.dumps([{"glob": "custom.jsonl", "profile": "internal", "reason": "test fixture"}]),
+        json.dumps([{"glob": "custom.jsonl", "profile": "internal", "reason": "тестовая фикстура"}]),
         encoding="utf-8",
     )
     assert scan([tmp_path])[0]
@@ -220,7 +220,7 @@ def test_rules_override_rejects_unknown_profile(tmp_path):
         load_rules(rules_file)
 
 
-# --- CLI contract --------------------------------------------------------------
+# --- контракт CLI ---------------------------------------------------------------
 
 def test_cli_exits_zero_on_clean_tree():
     result = _cli(DATA_PUBLIC, EXAMPLES)

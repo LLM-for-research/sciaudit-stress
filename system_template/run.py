@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""SciAudit-Stress system template.
+"""Шаблон системы SciAudit-Stress.
 
-Scaffold placeholder: reads a student-input JSONL and emits a SCHEMA-VALID
-prediction JSONL (one prediction per input). It does NO real auditing yet — its
-job is to prove the rail runs end-to-end ("rails before trains", staff manual
-§1.3, §8.1). Teams replace `audit_instance` with their actual pipeline; the
-external contract (--input / --output) must stay identical.
+Заглушка каркаса: читает JSONL со входами и пишет ВАЛИДНЫЙ ПО СХЕМЕ JSONL с
+предсказаниями (по одному на вход). Настоящего аудита она пока не делает — её
+задача доказать, что рельса проходит от входа до конца («rails before trains»,
+мануал §1.3, §8.1). Команды заменяют `audit_instance` своим пайплайном; внешний
+контракт (--input / --output) обязан остаться прежним.
 """
 from __future__ import annotations
 
@@ -16,10 +16,10 @@ import time
 
 
 def audit_instance(instance: dict) -> dict:
-    """Return a schema-valid prediction for one student-input instance.
+    """Вернуть валидное по схеме предсказание для одного входного инстанса.
 
-    Placeholder policy: always "insufficient" with no evidence — mirrors the B0
-    sanity baseline (staff manual §11.2). Replace with a real system.
+    Политика заглушки: всегда "insufficient" без evidence — повторяет
+    санитарный бейзлайн B0 (мануал §11.2). Замените настоящей системой.
     """
     return {
         "instance_id": instance["instance_id"],
@@ -58,13 +58,13 @@ def run(input_path: str, output_path: str) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="SciAudit-Stress system runner.")
-    parser.add_argument("--input", required=True, help="Path to student-input JSONL.")
-    parser.add_argument("--output", required=True, help="Path to write prediction JSONL.")
+    parser = argparse.ArgumentParser(description="Раннер системы SciAudit-Stress.")
+    parser.add_argument("--input", required=True, help="Путь к JSONL со входами.")
+    parser.add_argument("--output", required=True, help="Путь для записи JSONL с предсказаниями.")
     args = parser.parse_args(argv)
 
     n = run(args.input, args.output)
-    print(f"Wrote {n} prediction(s) to {args.output}", file=sys.stderr)
+    print(f"Записано предсказаний — {n}, файл {args.output}", file=sys.stderr)
     return 0
 
 

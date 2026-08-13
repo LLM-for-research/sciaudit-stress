@@ -1,47 +1,47 @@
-# Human-verification note template
+# Шаблон заметки о проверке человеком
 
-Use this template for each accepted stress case.
+Заполняйте этот шаблон для каждого принятого стресс-кейса.
 
-## Case ID
+## ID кейса
 
 `<instance_id>`
 
-## Reviewer
+## Рецензент
 
-`<name or reviewer id>`
+`<имя или id рецензента>`
 
-## Transformation type
+## Тип трансформации
 
 `<claim_strengthening | scope_expansion | evidence_removal | distractor_evidence | numeric_mismatch | table_caption_mismatch | missing_baseline | weak_ablation | non_comparable_baseline>`
 
-## Original claim
+## Исходный claim
 
-`<original claim>`
+`<исходный claim>`
 
-## Transformed claim
+## Трансформированный claim
 
-`<transformed claim>`
+`<трансформированный claim>`
 
-## Evidence checked
+## Проверенный evidence
 
-- `<eid>`: `<why this evidence matters>`
+- `<eid>`: `<почему именно этот evidence важен>`
 
-## Expected verdict
+## Ожидаемый вердикт
 
 `<warranted | overclaimed | contradicted | insufficient>`
 
-## Issue tags
+## Issue-теги
 
 - `<tag>`
 
-## Why this case is valid
+## Почему этот кейс корректен
 
-`<short explanation of why the expected verdict follows from the supplied evidence only>`
+`<короткое объяснение, почему ожидаемый вердикт следует только из предоставленного evidence>`
 
-## Ambiguity / risk notes
+## Неоднозначности и риски
 
-`<mention possible ambiguity or write "none">`
+`<опишите возможную неоднозначность или напишите "нет">`
 
-## Final decision
+## Итоговое решение
 
-`accepted / rejected / needs revision`
+`принят / отклонён / нужна доработка`

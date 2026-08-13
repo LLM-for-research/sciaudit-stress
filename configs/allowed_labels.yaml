@@ -1,14 +1,14 @@
-# Shared label contract. Read by baselines, system_template, evaluator, validators.
-# Single source of truth — do not hard-code these lists elsewhere.
+# Общий контракт меток. Читается бейзлайнами, system_template, evaluator'ом и валидаторами.
+# Единственный источник истины — не дублируйте эти списки в коде.
 
-# Verdict space (staff manual §2.1).
+# Пространство вердиктов (мануал §2.1).
 verdicts:
   - warranted
   - overclaimed
   - contradicted
   - insufficient
 
-# Claim types (proposal §8.1).
+# Типы claim (заявка §8.1).
 claim_types:
   - numerical_performance
   - baseline_superiority
@@ -17,7 +17,7 @@ claim_types:
   - efficiency
   - bounded_generalization
 
-# Multi-label issue tags (staff manual §12.3 / proposal Task C).
+# Мультиметочные issue-теги (мануал §12.3 / Task C в заявке).
 issue_tags:
   - numerical_inconsistency
   - claim_stronger_than_evidence

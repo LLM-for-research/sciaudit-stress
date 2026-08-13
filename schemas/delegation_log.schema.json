@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sciaudit-stress/schemas/delegation_log.schema.json",
-  "title": "Responsible LLM-use delegation log entry (PLACEHOLDER — finalized by Task 1)",
-  "description": "Fields per staff manual §16.2. Loosely typed for now.",
+  "title": "Запись журнала делегирования LLM (ЗАГЛУШКА — финализирует Task 1)",
+  "description": "Поля по мануалу §16.2. Пока типизировано нестрого.",
   "type": "object",
   "required": [
     "week",

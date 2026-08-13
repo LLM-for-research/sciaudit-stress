@@ -1,11 +1,11 @@
-"""SciAudit-Stress core package.
+"""Ядро пакета SciAudit-Stress.
 
-Subpackages are integration points for later issues:
-- schemas       : input/prediction validators
-- evaluator     : scoring (verdict, evidence, tags, calibration, selective)
-- leakage       : forbidden-key scan, metadata/claim probes
-- baselines     : B0-B4 reference systems
-- construction  : dataset construction utilities (Task 2/3)
+Подпакеты — точки интеграции для следующих задач:
+- schemas       : валидаторы входов и предсказаний
+- evaluator     : скоринг (вердикт, evidence, теги, калибровка, selective risk)
+- leakage       : скан запрещённых ключей, пробы на метаданных и claim
+- baselines     : эталонные системы B0–B4
+- construction  : утилиты построения датасета (Task 2/3)
 """
 
 __version__ = "0.0.1"

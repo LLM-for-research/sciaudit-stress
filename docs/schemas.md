@@ -1,26 +1,26 @@
-# Data schemas: public input, prediction, private gold
+# Схемы данных: публичный вход, предсказание, приватный gold
 
-Track A uses a **hard three-layer separation**. A system only ever sees layer 1
-and only ever produces layer 2. Layer 3 exists solely in the private
-`sciaudit-stress-private` repository.
+В Track A действует **жёсткое разделение на три слоя**. Система видит только слой 1 и порождает
+только слой 2. Слой 3 существует исключительно в приватном репозитории
+`sciaudit-stress-private`.
 
-| Layer | Schema | Who sees it | Contains |
+| Слой | Схема | Кто видит | Что содержит |
 |---|---|---|---|
-| 1. Public input | [`schemas/track_a_input.schema.json`](../schemas/track_a_input.schema.json) | students + systems | abstracted `paper_id`, `instance_id`, normalized claim, frozen evidence pack, `allowed_evidence_ids` |
-| 2. Prediction | [`schemas/prediction.schema.json`](../schemas/prediction.schema.json) | produced by systems, consumed by evaluator | verdict, evidence IDs, issue tags, confidence, optional abstention + runtime/cost |
-| 3. Internal annotation (private gold) | [`schemas/internal_annotation.schema.json`](../schemas/internal_annotation.schema.json) *(draft)* | staff/TA only | everything above **plus** provenance, stress metadata, gold verdict, severity, review notes, private rationale, split |
+| 1. Публичный вход | [`schemas/track_a_input.schema.json`](../schemas/track_a_input.schema.json) | участники и системы | абстрагированный `paper_id`, `instance_id`, нормализованный claim, замороженный evidence pack, `allowed_evidence_ids` |
+| 2. Предсказание | [`schemas/prediction.schema.json`](../schemas/prediction.schema.json) | порождается системами, потребляется evaluator'ом | вердикт, ID evidence, issue-теги, уверенность, опциональные отказ, время и стоимость |
+| 3. Внутренняя аннотация (приватный gold) | [`schemas/internal_annotation.schema.json`](../schemas/internal_annotation.schema.json) *(черновик)* | только штаб/TA | всё перечисленное выше **плюс** провенанс, стресс-метаданные, gold-вердикт, severity, записи ревью, приватное обоснование, сплит |
 
-Why the separation is strict: stress metadata trivially leaks labels (seeing
-`stress_type=evidence_removal` lets a system guess `insufficient` for free),
-and gold labels/provenance must never reach systems or external LLMs. See
-[benchmark framing](benchmark_framing.md).
+Почему разделение жёсткое: стресс-метаданные тривиально сливают метки (увидев
+`stress_type=evidence_removal`, система бесплатно угадывает `insufficient`), а gold-метки и
+провенанс не должны попадать ни к системам, ни во внешние LLM. См.
+[рамку бенчмарка](benchmark_framing.md).
 
 ---
 
-## 1. Public input (`track_a_input.schema.json`)
+## 1. Публичный вход (`track_a_input.schema.json`)
 
-One JSONL line per instance. `additionalProperties: false` everywhere — any
-extra key (e.g. a leaked `gold` block) makes the file invalid.
+Одна строка JSONL на инстанс. Везде `additionalProperties: false` — любой лишний ключ (например,
+просочившийся блок `gold`) делает файл невалидным.
 
 ```json
 {
@@ -40,86 +40,82 @@ extra key (e.g. a leaked `gold` block) makes the file invalid.
 }
 ```
 
-- `paper_id` is **abstracted** (no titles/authors/venues/URLs); the mapping to
-  real papers lives in the private provenance map.
-- `allowed_evidence_ids` are the only IDs a prediction may cite; the validator
-  checks they are a subset of the pack's `eid`s.
-- `claim_type` is one of the documented claim types (see
+- `paper_id` **абстрагирован** (никаких названий, авторов, площадок, URL); соответствие реальным
+  статьям живёт в приватной карте провенанса.
+- `allowed_evidence_ids` — единственные ID, на которые вправе сослаться предсказание; валидатор
+  проверяет, что это подмножество `eid` из пака.
+- `claim_type` — один из документированных типов claim (см.
   [`configs/allowed_labels.yaml`](../configs/allowed_labels.yaml)):
   `numerical_performance`, `baseline_superiority`, `ablation`, `robustness`,
   `efficiency`, `bounded_generalization`.
-- **No private labels or metadata, ever.** The validator explicitly rejects
+- **Никаких приватных меток и метаданных, никогда.** Валидатор явно отвергает
   `gold`, `verdict`, `severity`, `stress`/`stress_type`, `private_rationale`,
-  `provenance`/`provenance_map`, `review_note`, `split`, and similar keys at
-  any nesting depth.
+  `provenance`/`provenance_map`, `review_note`, `split` и подобные ключи на любой глубине
+  вложенности.
 
-Examples: [`examples/sample_inputs.jsonl`](../examples/sample_inputs.jsonl)
-(6 instances covering all claim types).
+Примеры: [`examples/sample_inputs.jsonl`](../examples/sample_inputs.jsonl)
+(6 инстансов, покрывающих все типы claim).
 
-## 2. Prediction (`prediction.schema.json`)
+## 2. Предсказание (`prediction.schema.json`)
 
-One JSONL line per input line, `instance_id` preserved.
+Одна строка JSONL на строку входа, `instance_id` сохраняется.
 
-**Required:** `instance_id`, `verdict`, `confidence`, `predicted_eids`,
-`issue_tags`.
-**Optional (recommended; baselines always emit them):** `abstain`,
+**Обязательные:** `instance_id`, `verdict`, `confidence`, `predicted_eids`, `issue_tags`.
+**Опциональные (рекомендуются; бейзлайны всегда их пишут):** `abstain`,
 `rationale_short`, `runtime_seconds`, `estimated_cost`, `system_info`.
 
-- **Verdicts are fixed:** `warranted` | `overclaimed` | `contradicted` |
-  `insufficient`. Nothing else validates.
-- **Issue tags are fixed** to the documented list in
+- **Вердикты фиксированы:** `warranted` | `overclaimed` | `contradicted` |
+  `insufficient`. Ничто другое не проходит валидацию.
+- **Issue-теги фиксированы** списком из
   [`configs/allowed_labels.yaml`](../configs/allowed_labels.yaml):
   `numerical_inconsistency`, `claim_stronger_than_evidence`,
   `unsupported_generalization`, `missing_ablation_support`,
   `non_comparable_baseline`, `weak_statistical_support`,
   `evidence_missing_or_incomplete`, `caption_chart_mismatch`.
-- `predicted_eids` (the "evidence_ids" of the prediction) must come from the
-  instance's `allowed_evidence_ids`; the validator cross-checks this when given
-  `--input`.
-- `confidence` ∈ [0, 1]. The gold label `insufficient` and the system action
-  `abstain` remain distinct concepts.
+- `predicted_eids` («evidence_ids» предсказания) обязаны браться из `allowed_evidence_ids`
+  соответствующего инстанса; валидатор сверяет это, когда ему передан `--input`.
+- `confidence` ∈ [0, 1]. Gold-метка `insufficient` и действие системы `abstain` остаются разными
+  понятиями.
 
-Examples: [`examples/sample_predictions.jsonl`](../examples/sample_predictions.jsonl)
-(6 predictions: all four verdicts, one abstention, one minimal
-required-fields-only object).
+Примеры: [`examples/sample_predictions.jsonl`](../examples/sample_predictions.jsonl)
+(6 предсказаний: все четыре вердикта, один отказ, один минимальный объект только с обязательными
+полями).
 
-## 3. Internal annotation (`internal_annotation.schema.json`, draft)
+## 3. Внутренняя аннотация (`internal_annotation.schema.json`, черновик)
 
-The private, staff/TA-only record from which public inputs are derived by
-**stripping** provenance, stress metadata, gold, review fields, and split. It
-adds:
+Приватная запись, доступная только штабу и TA, из которой публичные входы получают
+**вычёркиванием** провенанса, стресс-метаданных, gold, полей ревью и сплита. Она добавляет:
 
-- `paper.provenance_ref` — key into the private provenance map;
-- `evidence_pack[].source_ref`, `is_distractor` — private pointers/markers;
-- `stress` — `is_stress_case`, `stress_type` (10 documented transformations),
+- `paper.provenance_ref` — ключ в приватную карту провенанса;
+- `evidence_pack[].source_ref`, `is_distractor` — приватные указатели и пометки;
+- `stress` — `is_stress_case`, `stress_type` (10 документированных трансформаций),
   `seed_instance_id`;
-- `gold` — verdict, `supporting_eids`, issue tags, `severity`
+- `gold` — вердикт, `supporting_eids`, issue-теги, `severity`
   (`minor`/`moderate`/`severe`), `private_rationale`;
 - `review` — `validation_level` (`auto_unchecked` → `team_verified` →
-  `ta_validated` → `ta_adjudicated`), reviewer, `review_note`,
+  `ta_validated` → `ta_adjudicated`), рецензент, `review_note`,
   `human_verification_note`;
-- `split` — benchmark tier.
+- `split` — уровень бенчмарка.
 
-**Real internal annotations must never be committed to this repository.**
+**Настоящие внутренние аннотации никогда не должны попадать в этот репозиторий.**
 [`examples/sample_internal_annotation.synthetic.jsonl`](../examples/sample_internal_annotation.synthetic.jsonl)
-contains two clearly marked *synthetic* records for schema documentation only.
+содержит две явно помеченные *синтетические* записи исключительно как документацию схемы.
 
 ---
 
-## Validators
+## Валидаторы
 
 ```bash
-# public inputs: schema + leakage + eid consistency
+# публичные входы: схема + утечки + согласованность eid
 uv run python -m sciaudit.schemas.validate_inputs examples/sample_inputs.jsonl
 
-# predictions: schema + duplicates (+ coverage/eid cross-check with --input)
+# предсказания: схема + дубликаты (+ покрытие и сверка eid при --input)
 uv run python -m sciaudit.schemas.validate_predictions examples/sample_predictions.jsonl \
   --input examples/sample_inputs.jsonl
 ```
 
-Exit code 0 = valid; 1 = errors (printed with `file:line` locations). Both run
-in CI. Tests: `tests/test_schema_validation.py`.
+Код возврата 0 — валидно; 1 — есть ошибки (печатаются с координатами `файл:строка`). Оба гоняются
+в CI. Тесты: `tests/test_schema_validation.py`.
 
-`configs/allowed_labels.yaml` is the single source of truth for verdicts,
-issue tags, and claim types; a test asserts the JSON Schema enums stay in sync
-with it.
+`configs/allowed_labels.yaml` — единственный источник истины для вердиктов, issue-тегов и типов
+claim; отдельный тест следит, чтобы enum'ы в JSON Schema с ним не разъезжались.

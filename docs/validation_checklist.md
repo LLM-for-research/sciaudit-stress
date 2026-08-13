@@ -1,57 +1,56 @@
-# Stress-case validation checklist
+# Чеклист валидации стресс-кейса
 
-Use this checklist before accepting a stress case into the benchmark.
+Пройдите этот чеклист, прежде чем принимать стресс-кейс в бенчмарк.
 
-## Required fields
+## Обязательные поля
 
-- [ ] The case has an `instance_id`.
-- [ ] The case has an original claim.
-- [ ] The case has a transformed claim.
-- [ ] The case has an evidence pack with stable evidence IDs.
-- [ ] The case has an expected verdict.
-- [ ] The case has issue tags.
-- [ ] The case has a short rationale.
+- [ ] У кейса есть `instance_id`.
+- [ ] У кейса есть исходный claim.
+- [ ] У кейса есть трансформированный claim.
+- [ ] У кейса есть evidence pack со стабильными ID evidence.
+- [ ] У кейса есть ожидаемый вердикт.
+- [ ] У кейса есть issue-теги.
+- [ ] У кейса есть короткое обоснование.
 
-## Evidence validity
+## Корректность evidence
 
-- [ ] The verdict can be judged only from the supplied evidence pack.
-- [ ] No external paper knowledge is required.
-- [ ] Evidence IDs used in the gold label exist in the evidence pack.
-- [ ] The evidence pack is not ambiguous for the expected verdict.
-- [ ] Distractor evidence does not accidentally support the claim.
+- [ ] Вердикт выводится только из предоставленного evidence pack.
+- [ ] Внешние знания о статье не требуются.
+- [ ] ID evidence, использованные в gold-метке, существуют в evidence pack.
+- [ ] Evidence pack не двусмыслен относительно ожидаемого вердикта.
+- [ ] Отвлекающий evidence случайно не поддерживает claim.
 
-## Label validity
+## Корректность метки
 
-- [ ] `warranted` means the evidence directly supports the claim.
-- [ ] `overclaimed` means evidence supports a weaker claim, not the full claim.
-- [ ] `contradicted` means evidence directly conflicts with the claim.
-- [ ] `insufficient` means evidence is missing or incomplete.
+- [ ] `warranted` означает, что evidence прямо поддерживает claim.
+- [ ] `overclaimed` означает, что evidence поддерживает более слабое утверждение, а не claim целиком.
+- [ ] `contradicted` означает, что evidence прямо противоречит claim.
+- [ ] `insufficient` означает, что evidence отсутствует или неполон.
 
-## Leakage check
+## Проверка на утечку
 
-The first four boxes are enforced automatically — run the gate rather than
-eyeballing the file:
+Первые четыре пункта проверяются автоматически — запустите ворота, а не вычитывайте файл глазами:
 
 ```bash
 uv run python -m sciaudit.leakage.forbidden_key_scan data_public/ examples/ -v
 ```
 
-It exits 1 and prints the offending location (`inputs.jsonl:4: [input] $.gold`)
-for any forbidden key *or* string value. Files are scanned under the profile
-their path implies — a public `gold.jsonl` may carry the label, a student-facing
-`inputs.jsonl` may not. Exemptions live in `DEFAULT_RULES` in that module, each
-with a written reason; adding one takes a reviewed PR.
+Проверка выходит с кодом 1 и печатает координату нарушения
+(`inputs.jsonl:4: [input] $.gold`) для любого запрещённого ключа *или* строкового значения. Файлы
+сканируются под тем профилем, который следует из их пути: публичный `gold.jsonl` вправе нести
+метку, а видимый участникам `inputs.jsonl` — нет. Исключения перечислены в `DEFAULT_RULES` того же
+модуля, каждое с письменной причиной; добавить новое можно только отревьюенным PR.
 
-- [ ] Public input does not contain `gold`.
-- [ ] Public input does not contain `stress_type`.
-- [ ] Public input does not contain `expected_verdict`.
-- [ ] Public input does not contain private provenance.
-- [ ] Instance ID is non-semantic.
-- [ ] The answer cannot be guessed from metadata.
+- [ ] В публичном входе нет `gold`.
+- [ ] В публичном входе нет `stress_type`.
+- [ ] В публичном входе нет `expected_verdict`.
+- [ ] В публичном входе нет приватного провенанса.
+- [ ] `instance_id` несемантический.
+- [ ] Ответ невозможно угадать по метаданным.
 
-## Human verification
+## Проверка человеком
 
-- [ ] A human reviewer checked the evidence.
-- [ ] A human reviewer checked the expected verdict.
-- [ ] A human reviewer checked issue tags.
-- [ ] Any uncertainty is written in the verification note.
+- [ ] Человек-рецензент проверил evidence.
+- [ ] Человек-рецензент проверил ожидаемый вердикт.
+- [ ] Человек-рецензент проверил issue-теги.
+- [ ] Любая неоднозначность записана в заметке о верификации.

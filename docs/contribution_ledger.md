@@ -1,34 +1,35 @@
-# Contribution ledger
+# Реестр вкладов
 
-A running record of **who contributed what**, with a link to the artifact and its review status.
-It exists so contributions are visible and creditable, and so authorship decisions later are based
-on documented work rather than memory. **Authorship is not automatic** — it follows from
-substantial, documented, verified contributions recorded here.
+Текущая запись того, **кто что сделал**, со ссылкой на артефакт и статусом ревью. Реестр нужен,
+чтобы вклады были видимы и засчитываемы, а решения об авторстве позже опирались на
+задокументированную работу, а не на память. **Авторство не автоматическое** — оно следует из
+существенных, задокументированных и проверенных вкладов, записанных здесь.
 
-Add a row when your work is merged (or when an artifact is accepted). Keep it in this file, or in a
-linked sheet if the class prefers — the columns are the contract.
+Добавляйте строку, когда вашу работу смёржили (или когда артефакт принят). Держите реестр в этом
+файле или в связанной таблице, если курсу так удобнее, — контрактом являются колонки.
 
-| Date | Contributor | Contribution (what) | Type | Artifact link | Review status | Verifier | CRediT-style role |
+| Дата | Участник | Вклад (что) | Тип | Ссылка на артефакт | Статус ревью | Проверил | Роль в стиле CRediT |
 |---|---|---|---|---|---|---|---|
-| 2026-07-12 | Rodion Krainov | Implemented B0 baseline module | code | #3 / [commit](https://github.com/LLM-for-research/sciaudit-stress/commit/5344fa852e12fade7191797d9ed2cfc554c49ac1) | merged | - | Software |
-| 2026-07-12 | Abdullo Muminov | Implemented B0 baseline basic evaluator and leaderboard report | code | #5 / [PR](https://github.com/LLM-for-research/sciaudit-stress/pull/7) | merged | Rodion Krainov | Software |
+| 2026-07-12 | Rodion Krainov | Реализовал модуль бейзлайна B0 | code | #3 / [commit](https://github.com/LLM-for-research/sciaudit-stress/commit/5344fa852e12fade7191797d9ed2cfc554c49ac1) | merged | - | Software |
+| 2026-07-12 | Abdullo Muminov | Реализовал базовый evaluator для B0 и отчёт лидерборда | code | #5 / [PR](https://github.com/LLM-for-research/sciaudit-stress/pull/7) | merged | Rodion Krainov | Software |
 | | | | | | | | |
 
-## Column meanings
+## Что означают колонки
 
-- **Contribution (what)** — one concrete line; not "helped with stuff."
-- **Type** — one of: `data`, `stress-case`, `code`, `evaluation`, `docs`, `validation`,
+- **Вклад (что)** — одна конкретная строка; не «помогал по мелочи».
+- **Тип** — одно из: `data`, `stress-case`, `code`, `evaluation`, `docs`, `validation`,
   `analysis`, `writing`, `release`.
-- **Artifact link** — a PR number, file path, or experiment ID. **Required** — an unlinked
-  contribution can't be credited.
-- **Review status** — `proposed` / `in-review` / `merged` / `rejected`.
-- **Verifier** — the TA or peer who signed off (ties to the two-sign-off rule in the
-  [Week-1 guide](week1_guide.md)).
-- **CRediT-style role** — e.g. Software, Data curation, Validation, Analysis, Writing, Visualization.
+- **Ссылка на артефакт** — номер PR, путь к файлу или ID эксперимента. **Обязательна** — вклад без
+  ссылки засчитать нельзя.
+- **Статус ревью** — `proposed` / `in-review` / `merged` / `rejected`.
+- **Проверил** — TA или коллега, подписавший работу (связано с правилом двух подписей из
+  [гида первой недели](week1_guide.md)).
+- **Роль в стиле CRediT** — например Software, Data curation, Validation, Analysis, Writing,
+  Visualization.
 
-## How this connects to the rest
+## Как это связано с остальным
 
-- Each row should trace back to a PR that carried a [weekly update](weekly_update_template.md).
-- Real systems referenced here should have a [system card](system_card_template.md).
-- Useful-but-not-authorship-level work is still recorded and **acknowledged** — record everything;
-  credit is decided later, transparently, from these rows.
+- Каждая строка должна прослеживаться до PR, который нёс [еженедельный апдейт](weekly_update_template.md).
+- У настоящих систем, упомянутых здесь, должна быть [карточка системы](system_card_template.md).
+- Полезная работа, не дотягивающая до авторства, всё равно записывается и **отмечается в
+  благодарностях** — фиксируйте всё; кредит распределяется позже и прозрачно, по этим строкам.

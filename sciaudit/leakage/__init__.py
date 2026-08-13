@@ -1,5 +1,10 @@
-"""Leakage tooling (integration point — owned by Leakage/security TA).
+"""Инструменты против утечек (владелец — Leakage/security TA).
 
-Later issues add: forbidden_key_scan, metadata_probe, id_randomness_check,
-split_overlap_check.
+Готово:
+
+* ``forbidden_key_scan`` — рекурсивный поиск приватных ключей и строковых
+  значений в student-visible файлах (§10.1);
+* ``split_overlap_check`` — аудит пересечения сплитов по тексту claim (§10.4).
+
+Ещё нет: ``metadata_probe`` (§10.2) и ``id_randomness_check`` (§5.5).
 """

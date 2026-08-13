@@ -1,6 +1,6 @@
-# Per-system configuration. Teams override as needed.
+# Конфигурация конкретной системы. Команды переопределяют по необходимости.
 system_name: scaffold-stub
-model: scaffold-stub        # real systems must use an approved open model (../configs/models.yaml)
+model: scaffold-stub        # настоящие системы обязаны брать одобренную открытую модель (../configs/models.yaml)
 retrieval:
   method: none             # none | bm25 | dense
 abstention:

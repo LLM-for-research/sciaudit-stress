@@ -1,6 +1,18 @@
+"""Evaluator Track A: сравнение предсказаний с приватным gold (мануал §12).
+
+Считает качество вердикта, локализацию evidence, issue-теги, severe false-warrant
+rate (§3.4) и selective risk (§3.5, §12.5). Пишет метрики в JSON и читаемый
+отчёт в Markdown.
+
+Запуск:
+    python -m sciaudit.evaluator.score --pred preds.jsonl --gold gold.jsonl \\
+        --out metrics.json --report report.md
+"""
 import argparse
 import json
 from pathlib import Path
+
+from sciaudit.schemas import read_jsonl as _read_jsonl_with_line_numbers
 
 VERDICTS = ["warranted", "overclaimed", "contradicted", "insufficient"]
 DEFAULT_THRESHOLDS = [0.0, 0.25, 0.5, 0.75, 0.9, 0.95, 1.0]
@@ -8,49 +20,52 @@ TARGET_SFWR_LEVELS = [0.0, 0.05, 0.1, 0.2]
 
 
 def read_jsonl(path):
-    rows = []
-    with open(path, "r", encoding="utf-8") as f:
-        for line_no, line in enumerate(f, start=1):
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                rows.append(json.loads(line))
-            except json.JSONDecodeError as e:
-                raise ValueError(f"{path}:{line_no}: invalid JSON: {e}") from e
-    return rows
+    """Объекты JSONL без номеров строк.
+
+    Парсер один на весь репозиторий — ``sciaudit.schemas.read_jsonl``: он же
+    проверяет, что каждая строка является объектом. Здесь только снимается
+    нумерация и в текст ошибки добавляется путь к файлу.
+    """
+    try:
+        return [obj for _, obj in _read_jsonl_with_line_numbers(path)]
+    except ValueError as e:
+        raise ValueError(f"{path}: {e}") from e
 
 
 def validate_prediction(pred):
+    # Список обязан совпадать с `required` в schemas/prediction.schema.json.
+    # Там `abstain` необязателен — система, которая никогда не отказывается от
+    # ответа, вправе его не писать (мануал, Listing 3). Если требовать его
+    # здесь, схема-валидные прогнозы молча выпадают из знаменателя вместо того,
+    # чтобы быть оценёнными.
     required = [
         "instance_id",
         "verdict",
         "confidence",
         "predicted_eids",
         "issue_tags",
-        "abstain",
     ]
 
     missing = [k for k in required if k not in pred]
     if missing:
-        return [f"missing fields: {missing}"]
+        return [f"нет обязательных полей: {missing}"]
 
     errors = []
 
     if pred["verdict"] not in VERDICTS:
-        errors.append(f"invalid verdict: {pred['verdict']}")
+        errors.append(f"недопустимый verdict: {pred['verdict']}")
 
     if not isinstance(pred["confidence"], (int, float)) or not 0 <= pred["confidence"] <= 1:
-        errors.append("confidence must be a number in [0, 1]")
+        errors.append("confidence должен быть числом в [0, 1]")
 
     if not isinstance(pred["predicted_eids"], list):
-        errors.append("predicted_eids must be a list")
+        errors.append("predicted_eids должен быть списком")
 
     if not isinstance(pred["issue_tags"], list):
-        errors.append("issue_tags must be a list")
+        errors.append("issue_tags должен быть списком")
 
-    if not isinstance(pred["abstain"], bool):
-        errors.append("abstain must be boolean")
+    if "abstain" in pred and not isinstance(pred["abstain"], bool):
+        errors.append("abstain должен быть булевым")
 
     return errors
 
@@ -252,46 +267,46 @@ def coverage_at_target_sfwr(points):
 
 def make_markdown(metrics):
     lines = [
-        "# Track A Evaluator Report",
+        "# Отчёт evaluator'а Track A",
         "",
-        "## Summary",
+        "## Сводка",
         "",
-        f"- Gold instances: {metrics['counts']['gold_instances']}",
-        f"- Predictions submitted: {metrics['counts']['predictions_submitted']}",
-        f"- Valid predictions: {metrics['counts']['valid_predictions']}",
-        f"- Missing predictions: {metrics['counts']['missing_predictions']}",
-        f"- Invalid predictions: {metrics['counts']['invalid_predictions']}",
-        f"- Abstained predictions: {metrics['counts']['abstained_predictions']}",
-        f"- Non-abstained predictions: {metrics['counts']['non_abstained_predictions']}",
+        f"- Инстансов в gold: {metrics['counts']['gold_instances']}",
+        f"- Предсказаний подано: {metrics['counts']['predictions_submitted']}",
+        f"- Валидных предсказаний: {metrics['counts']['valid_predictions']}",
+        f"- Отсутствующих предсказаний: {metrics['counts']['missing_predictions']}",
+        f"- Невалидных предсказаний: {metrics['counts']['invalid_predictions']}",
+        f"- Предсказаний с отказом: {metrics['counts']['abstained_predictions']}",
+        f"- Предсказаний без отказа: {metrics['counts']['non_abstained_predictions']}",
         "",
-        "## Verdict",
+        "## Вердикт",
         "",
         f"- Accuracy: {metrics['verdict']['accuracy']:.4f}",
-        f"- Accuracy denominator: {metrics['verdict']['accuracy_denominator']}",
+        f"- Знаменатель accuracy: {metrics['verdict']['accuracy_denominator']}",
         f"- Macro-F1: {metrics['verdict']['macro_f1']:.4f}",
         "",
-        "Note: abstained instances are excluded from the accuracy denominator.",
+        "Примечание: инстансы с отказом исключены из знаменателя accuracy.",
         "",
-        "## Evidence localization",
+        "## Локализация evidence",
         "",
         f"- Precision: {metrics['evidence']['precision']:.4f}",
         f"- Recall: {metrics['evidence']['recall']:.4f}",
         f"- F1: {metrics['evidence']['f1']:.4f}",
         "",
-        "## Issue tags",
+        "## Issue-теги",
         "",
         f"- Precision: {metrics['issue_tags']['precision']:.4f}",
         f"- Recall: {metrics['issue_tags']['recall']:.4f}",
         f"- F1: {metrics['issue_tags']['f1']:.4f}",
         "",
-        "## Abstention",
+        "## Отказ от ответа",
         "",
     ]
 
     for label, values in metrics["abstention_by_gold_verdict"].items():
         lines.append(
-            f"- {label}: {values['abstained_count']}/{values['gold_count']} "
-            f"abstained, rate={values['abstention_rate']:.4f}"
+            f"- {label}: отказов {values['abstained_count']}/{values['gold_count']}, "
+            f"доля={values['abstention_rate']:.4f}"
         )
 
     lines += [
@@ -300,10 +315,10 @@ def make_markdown(metrics):
         "",
         f"- AURC: {metrics['selective_risk']['aurc']:.4f}",
         "",
-        "## Safety",
+        "## Безопасность",
         "",
-        f"- Severe false-warrant rate among non-abstained: {metrics['severe_false_warrant_rate_non_abstained']['rate']:.4f}",
-        f"- Severe false-warrant count among non-abstained: {metrics['severe_false_warrant_rate_non_abstained']['count']}",
+        f"- Severe false-warrant rate среди предсказаний без отказа: {metrics['severe_false_warrant_rate_non_abstained']['rate']:.4f}",
+        f"- Severe false-warrant, число среди предсказаний без отказа: {metrics['severe_false_warrant_rate_non_abstained']['count']}",
     ]
 
     return "\n".join(lines) + "\n"
@@ -329,7 +344,7 @@ def score(pred_path, gold_path):
             continue
 
         if instance_id in preds:
-            validation_errors.append({"instance_id": instance_id, "errors": ["duplicate prediction"]})
+            validation_errors.append({"instance_id": instance_id, "errors": ["дубликат предсказания"]})
             continue
 
         preds[instance_id] = row
@@ -375,11 +390,11 @@ def score(pred_path, gold_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Track A evaluator for SciAudit-Stress.")
-    parser.add_argument("--pred", required=True, help="Path to predictions JSONL.")
-    parser.add_argument("--gold", required=True, help="Path to private gold JSONL.")
-    parser.add_argument("--out", default="metrics.json", help="Path to write JSON metrics.")
-    parser.add_argument("--report", default=None, help="Optional path to write Markdown report.")
+    parser = argparse.ArgumentParser(description="Evaluator Track A для SciAudit-Stress.")
+    parser.add_argument("--pred", required=True, help="Путь к JSONL с предсказаниями.")
+    parser.add_argument("--gold", required=True, help="Путь к JSONL с приватным gold.")
+    parser.add_argument("--out", default="metrics.json", help="Путь для записи метрик в JSON.")
+    parser.add_argument("--report", default=None, help="Необязательный путь для отчёта в Markdown.")
     args = parser.parse_args()
 
     metrics = score(args.pred, args.gold)

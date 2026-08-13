@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sciaudit-stress/schemas/internal_annotation.schema.json",
-  "title": "SciAudit-Stress internal annotation record (PRIVATE, draft)",
-  "description": "Staff/TA-only annotation record kept in the private sciaudit-stress-private repository. Real records must NEVER be committed to the public repo; only clearly synthetic examples may appear here. The public Track A input is derived from this record by stripping paper provenance, stress metadata, gold labels, and review fields.",
+  "title": "Внутренняя запись аннотации SciAudit-Stress (ПРИВАТНО, черновик)",
+  "description": "Запись аннотации только для штаба и TA, хранится в приватном репозитории sciaudit-stress-private. Настоящие записи НИКОГДА не коммитятся в публичный репозиторий; здесь допустимы только явно синтетические примеры. Публичный вход Track A получается из этой записи вычёркиванием провенанса статьи, стресс-метаданных, gold-меток и полей ревью.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -25,7 +25,7 @@
         "paper_id": { "type": "string", "minLength": 1 },
         "provenance_ref": {
           "type": "string",
-          "description": "Key into the private provenance map (title, authors, URL, license, hash, extraction script)."
+          "description": "Ключ в приватную карту провенанса (название, авторы, URL, лицензия, хеш, скрипт извлечения)."
         },
         "domain": { "type": "string" },
         "year_bucket": { "type": "string" }
@@ -52,7 +52,7 @@
         "scope": { "type": "string" },
         "source_location": {
           "type": "string",
-          "description": "Where in the paper the claim comes from (section/page), private."
+          "description": "Откуда в статье взят claim (раздел или страница), приватно."
         }
       }
     },
@@ -67,13 +67,13 @@
           "eid": { "type": "string", "minLength": 1 },
           "source_kind": {
             "type": "string",
-            "description": "e.g. text_span, table, table_row, figure, caption, chart_metadata, appendix"
+            "description": "например text_span, table, table_row, figure, caption, chart_metadata, appendix"
           },
           "modality": { "type": "string" },
           "text": { "type": "string" },
           "source_ref": {
             "type": "string",
-            "description": "Private pointer into the paper (e.g. table_2, figure_3, section_4.1)."
+            "description": "Приватный указатель внутрь статьи (например table_2, figure_3, section_4.1)."
           },
           "is_distractor": { "type": "boolean" },
           "normalized_numbers": {
@@ -147,7 +147,7 @@
         "severity": { "type": "string", "enum": ["minor", "moderate", "severe"] },
         "private_rationale": {
           "type": "string",
-          "description": "Why the gold verdict holds. Never shown to systems or students."
+          "description": "Почему gold-вердикт именно такой. Ни системам, ни участникам не показывается."
         }
       }
     },
@@ -164,7 +164,7 @@
         "review_note": { "type": "string" },
         "human_verification_note": {
           "type": "string",
-          "description": "Mandatory for accepted stress cases: what a human checked before acceptance."
+          "description": "Обязательно для принятых стресс-кейсов: что человек проверил перед приёмкой."
         }
       }
     },

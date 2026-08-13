@@ -1,14 +1,14 @@
-"""Schema + validator tests for Track A (data/schema task, Sprint 1).
+"""Тесты схем и валидаторов Track A (задача по данным и схемам, Спринт 1).
 
-Covers the acceptance criteria:
-- sample inputs (>=5) validate against track_a_input.schema.json;
-- sample predictions (>=5) validate against prediction.schema.json;
-- the input validator rejects private fields (gold, verdict, severity,
+Покрывают критерии приёмки:
+- примеры входов (>=5) проходят track_a_input.schema.json;
+- примеры предсказаний (>=5) проходят prediction.schema.json;
+- валидатор входов отвергает приватные поля (gold, verdict, severity,
   stress_type, private_rationale, provenance_map, split, ...);
-- the verdict enum is fixed to {warranted, overclaimed, contradicted, insufficient};
-- schema enums stay in sync with configs/allowed_labels.yaml;
-- the synthetic internal-annotation examples validate against the draft schema;
-- both validators run as modules (CLI smoke).
+- enum вердиктов фиксирован множеством {warranted, overclaimed, contradicted, insufficient};
+- enum'ы схем не разъезжаются с configs/allowed_labels.yaml;
+- синтетические примеры внутренней аннотации проходят черновую схему;
+- оба валидатора запускаются как модули (smoke-прогон CLI).
 """
 import copy
 import json
@@ -53,7 +53,7 @@ def _write_jsonl(path, objs):
     )
 
 
-# --- example files are valid -------------------------------------------------
+# --- файлы-примеры валидны ---------------------------------------------------
 
 def test_sample_inputs_have_at_least_five_instances():
     assert len(read_jsonl(SAMPLE_INPUTS)) >= 5
@@ -80,7 +80,7 @@ def test_synthetic_internal_annotations_match_draft_schema():
         jsonschema.validate(obj, schema)
 
 
-# --- validator rejects private fields ----------------------------------------
+# --- валидатор отвергает приватные поля --------------------------------------
 
 @pytest.mark.parametrize("key,value", sorted(PRIVATE_FIELD_SAMPLES.items()))
 def test_input_validator_rejects_private_field(tmp_path, key, value):
@@ -90,8 +90,8 @@ def test_input_validator_rejects_private_field(tmp_path, key, value):
     _write_jsonl(bad, [obj])
 
     problems = validate_input_file(str(bad))
-    assert problems, f"private field '{key}' was not rejected"
-    assert any("private field" in p or "schema" in p for p in problems)
+    assert problems, f"приватное поле '{key}' не отвергнуто"
+    assert any("приватное поле" in p or "схема" in p for p in problems)
 
 
 def test_input_validator_rejects_nested_private_field(tmp_path):
@@ -109,7 +109,7 @@ def test_forbidden_key_scan_reports_location():
     assert any(h.startswith("$.gold") for h in hits)
 
 
-# --- structural input checks --------------------------------------------------
+# --- структурные проверки входа -----------------------------------------------
 
 def test_input_validator_rejects_missing_paper_id(tmp_path):
     obj = copy.deepcopy(_first_input())
@@ -125,7 +125,7 @@ def test_input_validator_rejects_unknown_allowed_eid(tmp_path):
     bad = tmp_path / "bad_inputs.jsonl"
     _write_jsonl(bad, [obj])
     problems = validate_input_file(str(bad))
-    assert any("unknown eid" in p for p in problems)
+    assert any("неизвестный eid" in p for p in problems)
 
 
 def test_input_validator_rejects_duplicate_instance_id(tmp_path):
@@ -133,10 +133,10 @@ def test_input_validator_rejects_duplicate_instance_id(tmp_path):
     bad = tmp_path / "bad_inputs.jsonl"
     _write_jsonl(bad, [obj, obj])
     problems = validate_input_file(str(bad))
-    assert any("duplicate instance_id" in p for p in problems)
+    assert any("дубликат instance_id" in p for p in problems)
 
 
-# --- prediction checks ---------------------------------------------------------
+# --- проверки предсказаний -----------------------------------------------------
 
 def test_prediction_schema_fixes_verdict_enum():
     schema = load_schema("prediction.schema.json")
@@ -184,7 +184,7 @@ def test_minimal_prediction_with_only_required_fields_is_valid(tmp_path):
     assert validate_prediction_file(str(good)) == []
 
 
-# --- enums stay in sync with configs/allowed_labels.yaml -----------------------
+# --- enum'ы не разъезжаются с configs/allowed_labels.yaml ----------------------
 
 def test_schema_enums_match_allowed_labels_yaml():
     yaml = pytest.importorskip("yaml")
@@ -205,7 +205,7 @@ def test_schema_enums_match_allowed_labels_yaml():
     assert gold["issue_tags"]["items"]["enum"] == labels["issue_tags"]
 
 
-# --- CLI smoke ------------------------------------------------------------------
+# --- smoke-прогон CLI -------------------------------------------------------------
 
 def test_validate_inputs_cli_ok():
     result = subprocess.run(
@@ -242,3 +242,27 @@ def test_validate_inputs_cli_fails_on_private_fields(tmp_path):
         cwd=REPO,
     )
     assert result.returncode == 1
+
+
+# --- configs/models.yaml остаётся внутренне согласованным ----------------------
+
+def test_model_profiles_are_coherent():
+    """Профили доступа к модели (решение #12) не должны разъезжаться.
+
+    Ключ модели берётся из переменной окружения, а не из файла, поэтому здесь же
+    проверяется, что в конфиг не закоммитили секрет.
+    """
+    yaml = pytest.importorskip("yaml")
+    cfg = yaml.safe_load((REPO / "configs" / "models.yaml").read_text(encoding="utf-8"))
+
+    profiles = cfg["profiles"]
+    assert cfg["default_profile"] in profiles
+    assert set(cfg["approved_profiles"]) <= set(profiles)
+
+    for name, profile in profiles.items():
+        assert "base_url" in profile, name
+        assert "model" in profile, name
+        assert profile.get("api_key_env"), f"{name}: профиль обязан называть переменную окружения"
+        assert "api_key" not in profile, f"{name}: ключ не хранится в конфиге"
+        # §6.1: прогон обязан быть воспроизводимым
+        assert profile.get("temperature") == 0.0, name

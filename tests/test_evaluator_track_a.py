@@ -1,3 +1,9 @@
+"""Тесты evaluator'а Track A (мануал §12).
+
+Покрывают счётчики, качество вердикта, severe false-warrant rate и selective
+risk на учебных данных, а также две краевые ситуации: когда система отказалась
+от ответа везде и когда нигде.
+"""
 import json
 
 from sciaudit.evaluator.score import score
@@ -143,3 +149,55 @@ def test_no_predictions_abstain(tmp_path):
     first_point = metrics["selective_risk"]["thresholds"][0]
     assert first_point["coverage"] == 1.0
     assert first_point["selected_count"] == 2
+
+
+# --- представление evaluator'а о валидности = prediction.schema.json ----------
+
+def test_prediction_without_abstain_is_scored_not_dropped(tmp_path):
+    """`abstain` в схеме необязателен, значит его отсутствие не делает прогноз невалидным.
+
+    Регрессия: evaluator требовал это поле и молча выкидывал схема-валидные
+    прогнозы из знаменателя вместо того, чтобы их оценить.
+    """
+    gold_path = tmp_path / "gold.jsonl"
+    pred_path = tmp_path / "pred.jsonl"
+
+    write_jsonl(gold_path, [
+        {"instance_id": "sas_001",
+         "gold": {"verdict": "warranted", "supporting_eids": ["e01"], "issue_tags": []}},
+        {"instance_id": "sas_002",
+         "gold": {"verdict": "overclaimed", "supporting_eids": ["e02"], "issue_tags": []}},
+    ])
+    # минимальная законная форма: только поля, помеченные required в схеме
+    write_jsonl(pred_path, [
+        {"instance_id": "sas_001", "verdict": "warranted", "confidence": 0.9,
+         "predicted_eids": ["e01"], "issue_tags": []},
+        {"instance_id": "sas_002", "verdict": "overclaimed", "confidence": 0.7,
+         "predicted_eids": ["e02"], "issue_tags": []},
+    ])
+
+    metrics = score(pred_path, gold_path)
+
+    assert metrics["counts"]["invalid_predictions"] == 0
+    assert metrics["counts"]["valid_predictions"] == 2
+    assert metrics["verdict"]["accuracy_denominator"] == 2
+    assert metrics["verdict"]["accuracy"] == 1.0
+
+
+def test_non_boolean_abstain_is_still_rejected():
+    from sciaudit.evaluator.score import validate_prediction
+
+    pred = {"instance_id": "sas_001", "verdict": "warranted", "confidence": 0.5,
+            "predicted_eids": [], "issue_tags": [], "abstain": "yes"}
+    assert any("abstain" in e for e in validate_prediction(pred))
+
+
+def test_repo_example_predictions_are_all_valid_to_the_evaluator():
+    """В examples/sample_predictions.jsonl минимальная форма лежит намеренно."""
+    from pathlib import Path
+    from sciaudit.evaluator.score import read_jsonl, validate_prediction
+
+    repo = Path(__file__).resolve().parents[1]
+    rows = read_jsonl(repo / "examples" / "sample_predictions.jsonl")
+    problems = {r["instance_id"]: validate_prediction(r) for r in rows}
+    assert not any(problems.values()), problems

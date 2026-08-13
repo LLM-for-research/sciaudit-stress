@@ -1,9 +1,59 @@
-# Approved open/local models for EVALUATED systems.
-# No paid or hidden external APIs in submitted systems (staff manual §7.4).
-# Placeholder — Baseline/systems TA fills real ids/paths before Week 1.
+# Профили доступа к модели для бейзлайнов B1–B4 и систем участников.
+#
+# Решение по issue #12: модель дёргается по API-ключу, а не грузится весами.
+# Все три бэкенда говорят на одном OpenAI-совместимом протоколе, поэтому клиент
+# один, а различается только профиль:
+#   - vllm_local  — свой сервер vLLM с открытой моделью;
+#   - university  — университетский шлюз (появится позже);
+#   - external    — сторонний OpenAI-совместимый эндпоинт.
+#
+# Политика §7.4 мануала ограничивает НЕ способ доступа, а саму модель:
+# оцениваемая система обязана работать на одобренной открытой модели. Проверка
+# перенесена на этап скоринга — сабмишен декларирует профиль, и профиль должен
+# быть из `approved_profiles` ниже. Какой транспорт за ним стоит, значения не
+# имеет.
+#
+# КЛЮЧ НИКОГДА НЕ ХРАНИТСЯ В ЭТОМ ФАЙЛЕ. Здесь только имя переменной
+# окружения; сам ключ живёт в .env (он в .gitignore) или в секретах CI.
 
-approved_models:
-  - name: approved_open_model
-    backend: huggingface        # huggingface | local_server
-    path: null
-    notes: "Placeholder entry."
+default_profile: vllm_local
+
+profiles:
+  vllm_local:
+    base_url: http://localhost:8000/v1
+    model: null                     # заполняется тем, кто поднимает сервер
+    api_key_env: SCIAUDIT_API_KEY
+    max_tokens: 512
+    temperature: 0.0                # детерминизм: §6.1 требует воспроизводимости
+    timeout_seconds: 60
+    max_retries: 3                  # backoff на 429/5xx
+    notes: "Локальный vLLM с открытой моделью. Профиль по умолчанию."
+
+  university:
+    base_url: null                  # выдадут вместе с доступом
+    model: null
+    api_key_env: SCIAUDIT_API_KEY
+    max_tokens: 512
+    temperature: 0.0
+    timeout_seconds: 60
+    max_retries: 3
+    notes: "Университетский шлюз. Заполнить, когда дадут эндпоинт."
+
+  external:
+    base_url: null
+    model: null
+    api_key_env: SCIAUDIT_API_KEY
+    max_tokens: 512
+    temperature: 0.0
+    timeout_seconds: 60
+    max_retries: 3
+    notes: >
+      Сторонний OpenAI-совместимый эндпоинт. Годится для разработки; для
+      оцениваемого прогона модель за ним обязана быть из approved_profiles.
+
+# Профили, допустимые в оцениваемом (лидербордном) прогоне. Всё остальное —
+# только разработка. Значение `system_info.model` в предсказаниях обязано
+# называть модель, а НЕ команду запуска и тем более не строку с ключом.
+approved_profiles:
+  - vllm_local
+  - university

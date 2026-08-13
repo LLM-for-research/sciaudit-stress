@@ -1,5 +1,5 @@
-# === Private / hidden data — must NEVER enter this public repo ===
-# (these live only in the access-limited `sciaudit-stress-private` repo)
+# === Приватные и скрытые данные — НИКОГДА не должны попадать в этот репозиторий ===
+# (живут только в репозитории `sciaudit-stress-private` с ограниченным доступом)
 data_private/
 data_private_ta_only/
 hidden/
@@ -7,12 +7,12 @@ hidden/
 provenance_map.jsonl
 master_instances.jsonl
 
-# NOTE: public gold IS allowed and expected here:
+# ВАЖНО: публичный gold здесь разрешён и ожидаем:
 #   data_public/public_warmup/gold.jsonl
 #   data_public/public_dev/gold.jsonl
-# Do NOT add a broad "*gold*.jsonl" rule — it would block those legitimate files.
+# НЕ добавляйте общее правило "*gold*.jsonl" — оно заблокирует эти законные файлы.
 
-# === Run outputs ===
+# === Результаты прогонов ===
 outputs/
 runs/
 
@@ -26,7 +26,7 @@ __pycache__/
 build/
 dist/
 
-# === Local env / secrets ===
+# === Локальное окружение и секреты ===
 .env
 .env.*
 metrics.json

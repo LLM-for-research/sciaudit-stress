@@ -9,40 +9,74 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv
+      - name: Установка uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - name: Sync (locked)
+      - name: Синхронизация по локфайлу
         run: uv sync --locked
-      - name: Unit tests
+      - name: Юнит-тесты
         run: uv run pytest tests/ -q
-      - name: Smoke run system_template
+      - name: Smoke-прогон system_template
         run: |
           uv run python system_template/run.py \
             --input examples/sample_inputs.jsonl \
             --output /tmp/predictions.jsonl
-      - name: Smoke run B0 baseline
+      - name: Smoke-прогон бейзлайна B0
         run: |
           uv run python -m sciaudit.baselines.b0_always_insufficient \
             --input examples/sample_inputs.jsonl \
             --output /tmp/b0.jsonl
 
-      - name: Validate example inputs (schema + leakage)
+      - name: Валидация примеров входов (схема + утечки)
         run: uv run python -m sciaudit.schemas.validate_inputs examples/sample_inputs.jsonl
-      - name: Validate example predictions
+      - name: Валидация примеров предсказаний
         run: |
           uv run python -m sciaudit.schemas.validate_predictions \
             examples/sample_predictions.jsonl --input examples/sample_inputs.jsonl
-      - name: Validate B0 predictions
+      - name: Валидация предсказаний B0
         run: |
           uv run python -m sciaudit.schemas.validate_predictions /tmp/b0.jsonl \
             --input examples/sample_inputs.jsonl
 
-      - name: Forbidden-key scan (leakage gate)
+      # --- Ворота утечки: §10.1 (запрещённые ключи) и §10.4 (пересечение сплитов) ---
+      - name: Скан запрещённых ключей (ворота утечки)
         run: |
           uv run python -m sciaudit.leakage.forbidden_key_scan \
             data_public/ examples/ --verbose
+      - name: Аудит пересечения сплитов
+        run: |
+          uv run python -m sciaudit.leakage.split_overlap_check \
+            examples data_public/public_warmup
 
-      # --- Enable as modules land (staff manual §6.3) ---
-      # - run: uv run python -m sciaudit.evaluator.score --pred /tmp/b0.jsonl --gold data_public/public_warmup/gold.jsonl
+      # --- Замкнутый readiness-loop на публичных данных (§8.1) ---
+      # inputs -> validate -> B0 -> validate predictions -> evaluator -> metrics
+      - name: Валидация публичных warm-up входов
+        run: |
+          uv run python -m sciaudit.schemas.validate_inputs \
+            data_public/public_warmup/inputs.jsonl
+      - name: Прогон B0 на публичном warm-up
+        run: |
+          uv run python -m sciaudit.baselines.b0_always_insufficient \
+            --input data_public/public_warmup/inputs.jsonl \
+            --output /tmp/b0_warmup.jsonl
+      - name: Валидация warm-up предсказаний
+        run: |
+          uv run python -m sciaudit.schemas.validate_predictions /tmp/b0_warmup.jsonl \
+            --input data_public/public_warmup/inputs.jsonl
+      - name: Оценка warm-up через evaluator
+        run: |
+          uv run python -m sciaudit.evaluator.score \
+            --pred /tmp/b0_warmup.jsonl \
+            --gold data_public/public_warmup/gold.jsonl \
+            --out /tmp/warmup_metrics.json \
+            --report /tmp/warmup_report.md
+      - name: Публикация warm-up метрик в сводку прогона
+        run: cat /tmp/warmup_report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Загрузка warm-up метрик как артефакта
+        uses: actions/upload-artifact@v4
+        with:
+          name: warmup-metrics
+          path: |
+            /tmp/warmup_metrics.json
+            /tmp/warmup_report.md

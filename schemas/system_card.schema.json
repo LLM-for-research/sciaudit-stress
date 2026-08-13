@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sciaudit-stress/schemas/system_card.schema.json",
-  "title": "System card (PLACEHOLDER — finalized by Writing/Task 1)",
-  "description": "Fields per staff manual §19.4. Loosely typed for now.",
+  "title": "Карточка системы (ЗАГЛУШКА — финализирует Writing/Task 1)",
+  "description": "Поля по мануалу §19.4. Пока типизировано нестрого.",
   "type": "object",
   "required": ["system_name", "team", "version", "model"],
   "properties": {

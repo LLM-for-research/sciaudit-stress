@@ -1,7 +1,8 @@
-"""Smoke test: the system template runs end-to-end and emits valid predictions.
+"""Smoke-тест: шаблон системы проходит от входа до конца и выдаёт валидные предсказания.
 
-Keeps the rail honest (staff manual §1.3, §8.1). Core checks use only stdlib;
-schema validation runs only if `jsonschema` is installed.
+Держит рельсу честной (мануал §1.3, §8.1). Основные проверки используют только
+стандартную библиотеку; валидация по схеме идёт, только если установлен
+`jsonschema`.
 """
 import json
 import subprocess
@@ -39,12 +40,12 @@ def test_template_runs_and_emits_valid_predictions(tmp_path):
     inputs = _read_jsonl(SAMPLE_INPUTS)
     preds = _read_jsonl(out)
 
-    assert len(preds) == len(inputs), "one prediction per input"
+    assert len(preds) == len(inputs), "по одному предсказанию на вход"
     assert [p["instance_id"] for p in preds] == [x["instance_id"] for x in inputs], \
-        "instance_ids preserved and aligned"
+        "instance_id сохранены и идут в том же порядке"
 
     for p in preds:
-        assert REQUIRED.issubset(p), f"missing keys: {REQUIRED - set(p)}"
+        assert REQUIRED.issubset(p), f"нет ключей: {REQUIRED - set(p)}"
         assert p["verdict"] in VERDICTS
         assert 0.0 <= p["confidence"] <= 1.0
 
@@ -54,7 +55,7 @@ def test_predictions_match_schema_if_jsonschema_available(tmp_path):
         import jsonschema
     except ImportError:
         import pytest
-        pytest.skip("jsonschema not installed")
+        pytest.skip("jsonschema не установлен")
 
     schema = json.loads(PRED_SCHEMA.read_text(encoding="utf-8"))
     out = tmp_path / "predictions.jsonl"

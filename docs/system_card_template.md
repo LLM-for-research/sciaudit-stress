@@ -1,50 +1,53 @@
-# System-card template
+# Шаблон карточки системы
 
-Every real system (baseline or team) ships a system card. It tells a reader what the system is,
-what it may and may not be used for, and what it costs — before they look at any leaderboard number.
-Copy the block, fill it in, and keep it next to your system's code.
+Каждая настоящая система (бейзлайн или командная) едет с карточкой. Она говорит читателю, что это
+за система, для чего её можно и нельзя использовать и сколько она стоит — ещё до того, как он
+посмотрит на любое число в лидерборде. Скопируйте блок, заполните его и держите рядом с кодом
+системы.
 
 ```markdown
-# System card: <system name>
+# Карточка системы: <название системы>
 
-**System name:**            <!-- e.g. team04-bm25-audit-v2 -->
-**Team / author:**
-**Version:**
-**Track:**                  <!-- A / B / C / D -->
+**Название системы:**       <!-- например team04-bm25-audit-v2 -->
+**Команда / автор:**
+**Версия:**
+**Трек:**                   <!-- A / B / C / D -->
 
-## Inputs
-**Input used:**             <!-- which split(s): public_warmup, public_dev, hidden_val, ... -->
-**Evidence handling:**      <!-- full pack / retrieved top-k / numeric-checked / ... -->
+## Входные данные
+**Использованный вход:**    <!-- какие сплиты: public_warmup, public_dev, hidden_val, ... -->
+**Работа с evidence:**      <!-- весь пак / top-k из retrieval / с численной проверкой / ... -->
 
-## Components
-**Tools used:**             <!-- BM25, numeric checker, VLM, none, ... -->
-**Model used:**             <!-- approved open model id, or "none" -->
-**Uses numeric checker?**   yes / no
-**Uses fine-tuning?**       yes / no
-**Uses VLM?**               yes / no
+## Компоненты
+**Инструменты:**            <!-- BM25, численный чекер, VLM, нет, ... -->
+**Модель:**                 <!-- id одобренной открытой модели или "none" -->
+**Численный чекер?**        да / нет
+**Дообучение?**             да / нет
+**VLM?**                    да / нет
 
-## Behavior & limits
-**Intended use:**           <!-- what this system is for -->
-**Non-intended use:**       <!-- what it must NOT be used to claim -->
-**Limitations:**            <!-- known weaknesses, failure modes -->
-**Abstention behavior:**    <!-- when it abstains, if at all -->
-**Severe false-warrant behavior:**  <!-- how often it wrongly says "warranted" -->
+## Поведение и границы
+**Целевое применение:**     <!-- для чего эта система -->
+**Недопустимое применение:**<!-- что на её основании утверждать НЕЛЬЗЯ -->
+**Ограничения:**            <!-- известные слабости, режимы отказа -->
+**Поведение при отказе:**   <!-- когда система отказывается отвечать, если вообще -->
+**Severe false-warrant:**   <!-- как часто она ошибочно говорит "warranted" -->
 
-## Resources
-**Cost / runtime:**         <!-- runtime per instance; gpu_seconds; api_cost_usd (0 for open) -->
+## Ресурсы
+**Стоимость / время:**      <!-- время на инстанс; gpu_seconds; api_cost_usd (0 для открытых) -->
 
-## Reproducibility & responsible use
-**How to run:**             <!-- exact command(s) -->
-**Responsible LLM-use summary:**  <!-- what an LLM helped build; what was verified by hand -->
+## Воспроизводимость и ответственное использование
+**Как запустить:**          <!-- точные команды -->
+**Сводка по использованию LLM:**  <!-- что помогала строить LLM; что проверено руками -->
 ```
 
-## Notes
+## Заметки
 
-- **Input used / tools used / model used / limitations / cost-runtime** are the required minimum.
-  The extra fields (intended/non-intended use, abstention, severe false-warrant, reproducibility)
-  are what turn a card from a label into something a reviewer can trust — fill them when they apply.
-- Keep the card honest about **cost/runtime**. Evaluated systems use approved open models, so
-  `api_cost_usd` is normally `0`; report `gpu_seconds` and wall-clock runtime truthfully.
-- The card must match the machine-readable `system_info` block your predictions emit (model,
-  `uses_numeric_checker`, `uses_lora`, `uses_vlm`). If they disagree, fix the card.
-- Responsible-use summary follows the [LLM-use policy](llm_use_policy.md).
+- **Использованный вход, инструменты, модель, ограничения, стоимость и время** — обязательный
+  минимум. Остальные поля (целевое и недопустимое применение, отказ, severe false-warrant,
+  воспроизводимость) превращают карточку из ярлыка в то, чему рецензент может доверять, —
+  заполняйте их, когда они применимы.
+- Держите карточку честной в части **стоимости и времени**. Оцениваемые системы работают на
+  одобренных открытых моделях, поэтому `api_cost_usd` обычно `0`; `gpu_seconds` и реальное время
+  указывайте правдиво.
+- Карточка обязана совпадать с машиночитаемым блоком `system_info`, который пишут ваши предсказания
+  (модель, `uses_numeric_checker`, `uses_lora`, `uses_vlm`). Если они расходятся — правьте карточку.
+- Сводка по ответственному использованию следует [политике использования LLM](llm_use_policy.md).
