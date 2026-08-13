@@ -134,7 +134,7 @@ def safe_prediction(instance_id, model_name, runtime_seconds, rationale):
         "verdict": SAFE_FALLBACK_VERDICT,
         "confidence": 0.0,
         "predicted_eids": [],
-        "issue_tags": ["model_parse_failure"],
+        "issue_tags": [],
         "abstain": True,
         "rationale_short": rationale,
         "runtime_seconds": runtime_seconds,
@@ -205,19 +205,21 @@ def normalize_prediction(raw, instance_id, allowed_eids, model_name, runtime_sec
     }
 
 
-def audit_instance(instance, top_k=3, model_command=None, retries=1, model_fn=None):
+def audit_instance(instance, top_k=3, model_command=None, model_name="b1-open-model", retries=1, model_fn=None):
     start = time.perf_counter()
 
     instance_id = instance["instance_id"]
     claim = instance.get("claim", {})
     claim_text = claim.get("text") or claim.get("normalized_claim") or ""
     evidence_pack = instance.get("evidence_pack", [])
-    allowed_eids = {ev.get("eid") for ev in evidence_pack if ev.get("eid")}
+    allowed_eids = set(instance.get("allowed_evidence_ids") or [])
+    if not allowed_eids:
+        allowed_eids = {ev.get("eid") for ev in evidence_pack if ev.get("eid")}
 
     retrieved = bm25_rank(claim_text, evidence_pack, top_k=top_k)
     prompt = build_prompt(instance, retrieved)
 
-    model_name = model_command if model_command else "mocked_or_safe_fallback"
+    model_name = model_name if model_command else "mocked_or_safe_fallback"
 
     for _ in range(retries + 1):
         try:
@@ -248,13 +250,16 @@ def audit_instance(instance, top_k=3, model_command=None, retries=1, model_fn=No
     )
 
 
-def run(input_path, output_path, top_k=3, model_command=None, retries=1, model_fn=None):
+def run(input_path, output_path, top_k=3, model_command=None, model_name="b1-open-model", retries=1, model_fn=None):
     instances = read_jsonl(input_path)
+    if model_command is None and model_fn is None:
+        raise ValueError("B1 requires either --model-command or model_fn.")
     predictions = [
         audit_instance(
             instance,
             top_k=top_k,
             model_command=model_command,
+        model_name=model_name,
             retries=retries,
             model_fn=model_fn,
         )
@@ -265,6 +270,7 @@ def run(input_path, output_path, top_k=3, model_command=None, retries=1, model_f
 
 
 def main():
+    parser.add_argument("--model-name", default="b1-open-model", help="Safe model identifier for system_info.model.")
     parser = argparse.ArgumentParser(description="B1 BM25 retrieval + structured model audit baseline.")
     parser.add_argument("--input", required=True, help="Path to input JSONL.")
     parser.add_argument("--output", required=True, help="Path to output predictions JSONL.")
@@ -278,6 +284,7 @@ def main():
         output_path=args.output,
         top_k=args.top_k,
         model_command=args.model_command,
+    model_name=args.model_name,
         retries=args.retries,
     )
 
