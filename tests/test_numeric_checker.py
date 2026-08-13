@@ -1,16 +1,19 @@
-"""Deterministic numeric/table checker tests (issue #15).
+"""Тесты детерминированного численного/табличного чекера (issue #15).
 
-Covers the §11.5 catalogue: direct numeric claims, percent vs
-percentage-point, mean, best/worst, rank, all/any, absolute and relative
-gains, plus the mandatory reference case, eid reporting, and offline
-operation (no model, no network).
+Покрывают каталог §11.5: прямые числовые утверждения, проценты против
+процентных пунктов, среднее, best/worst, ранг, all/any, абсолютный и
+относительный прирост, а также обязательный эталонный кейс, возврат eid и
+офлайновую работу (без модели и сети).
+
+Отдельный блок в конце — выбор сущности по claim, нулевая база и разбор формы
+«A n vs B m»: на этом чекер ошибался, и тесты сторожат, чтобы не вернулось.
 """
-import pytest
-
 from sciaudit.baselines.numeric_checker import (
     STATUS_FAILED,
     STATUS_OK,
     STATUS_UNKNOWN,
+    _measures,
+    _subject,
     check_claim_numbers,
 )
 
@@ -31,7 +34,7 @@ def _failed(results):
     return [r for r in results if r["status"] == STATUS_FAILED]
 
 
-# --- mandatory reference case (staff manual §11.5) ---------------------------
+# --- обязательный эталонный кейс (мануал §11.5) ------------------------------
 
 def test_reference_case_outperforms_all_baselines_fails():
     results = check_claim_numbers(
@@ -45,7 +48,7 @@ def test_reference_case_outperforms_all_baselines_fails():
     assert any("92.1" in r["reason"] for r in failed)
 
 
-# --- direct numeric claims ----------------------------------------------------
+# --- прямые числовые утверждения ----------------------------------------------
 
 def test_direct_numeric_mismatch_fails():
     results = check_claim_numbers(
@@ -64,7 +67,7 @@ def test_direct_numeric_match_ok():
     assert _statuses(results) == {STATUS_OK}
 
 
-# --- percent vs percentage-point ----------------------------------------------
+# --- проценты против процентных пунктов ---------------------------------------
 
 def test_percentage_points_match_is_ok():
     results = check_claim_numbers(
@@ -75,7 +78,7 @@ def test_percentage_points_match_is_ok():
 
 
 def test_percent_is_not_percentage_points():
-    # 10 percentage points over a base of 78.1 is ~12.8%, not 10%.
+    # 10 процентных пунктов от базы 78.1 — это ~12.8%, а не 10%.
     results = check_claim_numbers(
         "Method X improves the accuracy by 10%.",
         _pack("Method X = 88.1, Baseline = 78.1"),
@@ -94,7 +97,7 @@ def test_percent_gain_match_is_ok():
     assert _statuses(results) == {STATUS_OK}
 
 
-# --- mean ---------------------------------------------------------------------
+# --- среднее --------------------------------------------------------------------
 
 def test_mean_check():
     pack = _pack("Method X = 89.0", "Method X = 91.0")
@@ -104,7 +107,7 @@ def test_mean_check():
     assert _failed(bad) and any("90.0" in r["reason"] for r in _failed(bad))
 
 
-# --- best / worst / rank -------------------------------------------------------
+# --- best / worst / ранг ----------------------------------------------------------
 
 def test_highest_check_fails_when_baseline_wins():
     results = check_claim_numbers(
@@ -131,7 +134,7 @@ def test_rank_first_check():
     assert _failed(results)
 
 
-# --- comparative claim ---------------------------------------------------------
+# --- именованное сравнение ---------------------------------------------------------
 
 def test_comparison_fails_when_target_wins():
     results = check_claim_numbers(
@@ -150,7 +153,7 @@ def test_comparison_ok_when_method_wins():
     assert _statuses(results) == {STATUS_OK}
 
 
-# --- all/any --------------------------------------------------------------------
+# --- all/any ------------------------------------------------------------------------
 
 def test_all_baselines_beaten_is_ok():
     results = check_claim_numbers(
@@ -160,7 +163,7 @@ def test_all_baselines_beaten_is_ok():
     assert _statuses(results) == {STATUS_OK}
 
 
-# --- absolute gain ---------------------------------------------------------------
+# --- абсолютный прирост ---------------------------------------------------------------
 
 def test_absolute_gain_match_is_ok():
     results = check_claim_numbers(
@@ -179,7 +182,7 @@ def test_absolute_gain_mismatch_fails():
     assert any("1.2" in r["reason"] for r in _failed(results))
 
 
-# --- edge cases -------------------------------------------------------------------
+# --- краевые случаи -----------------------------------------------------------------
 
 def test_no_numbers_never_fails():
     results = check_claim_numbers(
@@ -217,3 +220,87 @@ def test_normalized_numbers_are_used():
     results = check_claim_numbers("Method X achieves 91.0 accuracy.", pack)
     assert _failed(results)
     assert results[0]["eids"] == ["e01"]
+
+
+# --- регрессии: выбор сущности, нулевая база, форма «vs» -------------------------
+
+def test_subject_is_read_from_the_claim():
+    assert _subject("Method X outperforms all baselines.") == "Method X"
+    assert _subject("The proposed method reduces training time by 5%.") == "proposed method"
+    assert _subject("Nothing is asserted here") == ""
+
+
+def test_pack_with_two_methods_uses_the_one_the_claim_names():
+    """Регрессия: бралось первое подходящее число, а не названная сущность.
+
+    Method X (95.0) действительно выше бейзлайна (80.0) — верный ответ ok.
+    Раньше проверка хваталась за Method A (70.0) и выдавала ложное failed.
+    """
+    results = check_claim_numbers(
+        "Method X outperforms all baselines.",
+        _pack("Method A = 70.0, Method X = 95.0, Baseline = 80.0"),
+    )
+    assert _statuses(results) == {STATUS_OK}, results
+
+
+def test_label_in_both_hint_lists_is_not_compared_with_itself():
+    """«Baseline model» содержит и «baseline», и «model».
+
+    Признак бейзлайна сильнее, поэтому сущность не должна сравниваться сама с
+    собой: раньше в reason выходило «Baseline model is not below Baseline model».
+    """
+    results = check_claim_numbers(
+        "Method X outperforms all baselines.",
+        _pack("Baseline model = 95.0, Method X = 88.0"),
+    )
+    failed = _failed(results)
+    assert failed, results
+    reason = failed[0]["reason"]
+    assert "Baseline model (95.0)" in reason
+    assert "Method X (88.0)" in reason
+
+
+def test_zero_baseline_is_unknown_not_a_crash():
+    """Относительный прирост от нуля не определён — это unknown, а не ZeroDivisionError."""
+    results = check_claim_numbers(
+        "Method X improves accuracy by 10%.",
+        _pack("Method X = 5.0, Baseline = 0"),
+    )
+    assert _statuses(results) == {STATUS_UNKNOWN}, results
+    assert any("zero base" in r["reason"] for r in results)
+
+
+def test_vs_form_is_parsed():
+    """«ours 90.2 vs best baseline 89.5» — частая форма в реальных паках."""
+    pack = _pack("Table 3: Dataset 1: ours 90.2 vs best baseline 89.5")
+    assert [(m.label, m.value) for m in _measures(pack)] == [
+        ("ours", 90.2), ("best baseline", 89.5),
+    ]
+    assert _statuses(check_claim_numbers("Ours outperforms all baselines.", pack)) == {STATUS_OK}
+
+
+def test_vs_form_fails_when_the_baseline_wins():
+    pack = _pack("Table 3: ours 89.5 vs best baseline 90.2")
+    assert _failed(check_claim_numbers("Ours outperforms all baselines.", pack))
+
+
+def test_prose_numbers_are_not_pulled_into_the_pack():
+    """Шаблон требует маркер «vs» именно затем, чтобы не тянуть числа из прозы.
+
+    Свободная пара «метка число» дала бы измерения вроде («severity levels 1 to»,
+    5.0), и best/worst начал бы падать на пустом месте.
+    """
+    for text in (
+        "Figure 2 reports robustness results for severity levels 1 to 5; "
+        "only severity level 1 is included in the supplied evidence.",
+        "Table 3 contains ablation results, but the table values are not included.",
+        "Figure 3 compares robustness under corruption severity levels 1-5.",
+    ):
+        assert _measures(_pack(text)) == [], text
+
+
+def test_duplicate_numbers_are_not_counted_twice():
+    """Один и тот же факт, пойманный двумя шаблонами, не должен удваивать среднее."""
+    pack = _pack("Method X = 90.0", "Method X = 90.0")
+    assert len(_measures(pack)) == 2  # разные eid — это два независимых измерения
+    assert len(_measures(_pack("Method X = 90.0"))) == 1
