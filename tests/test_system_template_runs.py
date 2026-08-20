@@ -62,3 +62,27 @@ def test_predictions_match_schema_if_jsonschema_available(tmp_path):
     _run(out)
     for p in _read_jsonl(out):
         jsonschema.validate(p, schema)
+
+
+# --- §6.4: воспроизводимость образа --------------------------------------------------
+
+def test_the_template_carries_a_lockfile():
+    """Без локфайла `uv sync --locked` в Dockerfile падает, а образ невоспроизводим.
+
+    Зависимостей у шаблона пока нет, и локфайл выходит почти пустым — но именно
+    он превращает сборку из «резолвим на месте» в «ставим то же самое». Как
+    только команда добавит первую зависимость, файл начнёт держать её версию.
+    """
+    lock = REPO / "system_template" / "uv.lock"
+    assert lock.exists(), "выполните `uv lock` в system_template/ и закоммитьте uv.lock"
+    text = lock.read_text(encoding="utf-8")
+    assert "requires-python" in text
+
+
+def test_the_image_pins_the_uv_version():
+    """`:latest` означает, что через месяц тот же Dockerfile соберёт другое окружение."""
+    dockerfile = (REPO / "system_template" / "Dockerfile").read_text(encoding="utf-8")
+    uv_lines = [line for line in dockerfile.splitlines()
+                if "ghcr.io/astral-sh/uv" in line]
+    assert uv_lines, "образ обязан брать uv из закреплённого источника"
+    assert all(":latest" not in line for line in uv_lines), uv_lines

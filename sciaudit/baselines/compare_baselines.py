@@ -33,6 +33,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import statistics
 import sys
 import tempfile
@@ -130,19 +131,57 @@ def _aggregate(passes):
     return aggregated
 
 
-def stability(rows):
-    """Устойчив ли порядок систем по accuracy между повторами.
+#: Метрики, где меньше — лучше.
+LOWER_IS_BETTER = frozenset({"sfwr", "augrc"})
 
-    Возвращает ``(устойчив, победители по прогонам)``. Это и есть ответ на
-    вопрос, ради которого делаются повторы: если победитель меняется, таблица
-    не разрешает сравнение систем — и обязана сказать это прямо.
+
+def comparable_rows(rows, metric):
+    """Строки, которые вообще можно сравнивать этой метрикой.
+
+    Accuracy и macro-F1 считаются **только по отвеченным инстансам**, поэтому
+    система с покрытием 0.58 и система с покрытием 1.0 по ним несравнимы: первая
+    отвечает на то, что сочла лёгким. Сравнивать их этими метриками — значит
+    объявить победителем того, кто отказался от трудного. Метрики, устойчивые к
+    покрытию (AUGRC, SFWR), сравнивают всех.
     """
-    repeats = rows[0]["repeats"] if rows else 0
-    winners = []
-    for i in range(repeats):
-        best = max(rows, key=lambda r: r["values"]["accuracy"][i])
-        winners.append(best["system"])
-    return len(set(winners)) == 1, winners
+    if metric in ("accuracy", "macro_f1", "evidence_f1"):
+        return [row for row in rows if row["coverage"] >= 1.0 - 1e-9]
+    return list(rows)
+
+
+def stability(rows, metric="accuracy"):
+    """Кто выигрывает по метрике так, что разброс этого не отменяет.
+
+    Сравнение идёт **доминированием**, а не победами по прогонам: лидер признан
+    только если его худший прогон не хуже лучшего прогона любого соперника. Это
+    не зависит от того, какой прогон с каким сопоставлять, и потому не выдаёт
+    случайное совпадение за результат.
+
+    Возвращает ``(вердикт, лидер, сравнимые строки)``, где вердикт — один из
+    ``"strict"`` (разрывы не пересекаются), ``"weak"`` (касаются в одной точке)
+    и ``"none"`` (разбросы перекрываются, победителя назвать нельзя).
+    """
+    rows = comparable_rows(rows, metric)
+    if len(rows) < 2:
+        return "none", None, rows
+
+    lower_better = metric in LOWER_IS_BETTER
+    leader = min(rows, key=lambda r: r[metric]) if lower_better else \
+        max(rows, key=lambda r: r[metric])
+    others = [row for row in rows if row is not leader]
+
+    if lower_better:
+        leader_worst = max(leader["values"][metric])
+        rivals_best = min(min(row["values"][metric]) for row in others)
+        verdict = ("strict" if leader_worst < rivals_best
+                   else "weak" if leader_worst <= rivals_best else "none")
+    else:
+        leader_worst = min(leader["values"][metric])
+        rivals_best = max(max(row["values"][metric]) for row in others)
+        verdict = ("strict" if leader_worst > rivals_best
+                   else "weak" if leader_worst >= rivals_best else "none")
+
+    return verdict, leader, rows
 
 
 def compare(input_path, gold_path, model_command, model_name, top_ks=DEFAULT_TOP_KS,
@@ -171,6 +210,62 @@ def _cell(row, metric):
     if len(values) > 1 and max(values) - min(values) > 1e-9:
         text += f" [{min(values):.3f}–{max(values):.3f}]"
     return text
+
+
+def _verdict_block(rows, repeats):
+    """Что именно позволяет заключить измеренный разброс.
+
+    Два отдельных утверждения, потому что вопроса два. По accuracy сравниваются
+    только системы с полным покрытием: у отказывающейся системы accuracy
+    считается по тому, что она сочла лёгким, и рядом с остальными не стоит. По
+    AUGRC сравниваются все — эта метрика строится ранжированием и покрытием не
+    надувается.
+    """
+    lines = []
+    selective = [row for row in rows if row["coverage"] < 1.0 - 1e-9]
+
+    for metric, label, scale in (("accuracy", "accuracy", "выше — лучше"),
+                                 ("augrc", "AUGRC", "ниже — лучше")):
+        verdict, leader, compared = stability(rows, metric)
+        names = ", ".join(row["system"] for row in compared)
+        if leader is None:
+            continue
+        low, high = min(leader["values"][metric]), max(leader["values"][metric])
+        if verdict == "strict":
+            lines += [
+                f"> **По {label} ({scale}) лидер устойчив: {leader['system']}.**",
+                f"> Его худший из {repeats} прогонов ({low:.3f}) лучше, чем лучший прогон",
+                f"> любой другой сравниваемой системы. Сравнивались: {names}.",
+                "",
+            ]
+        elif verdict == "weak":
+            lines += [
+                f"> **По {label} ({scale}) впереди {leader['system']}, но разрывы",
+                f"> касаются.** Худший прогон лидера ({low:.3f}) ровно равен лучшему",
+                f"> прогону соперника, так что запас — ноль. Сравнивались: {names}.",
+                "",
+            ]
+        else:
+            lines += [
+                f"> **По {label} разброс не позволяет назвать победителя.** Диапазоны",
+                f"> систем перекрываются ({leader['system']}: {low:.3f}–{high:.3f}).",
+                "> Это свойство не кода, а эндпоинта: недетерминизм остаётся при",
+                "> `temperature: 0.0` и `seed`. Нужны либо ещё повторы, либо",
+                "> детерминированный бэкенд.",
+                "",
+            ]
+
+    if selective:
+        names = ", ".join(row["system"] for row in selective)
+        lines += [
+            f"> **{names} по accuracy с остальными не сравнивается.** Accuracy",
+            "> считается только по отвеченным инстансам, а эта система отвечает не на",
+            "> все: её число — качество на том, что она сочла посильным, и рядом с",
+            "> системой со сплошным покрытием оно не стоит. Смотрите на цену отказа:",
+            "> сколько покрытия отдано и что за это куплено в SFWR.",
+            "",
+        ]
+    return lines
 
 
 def to_markdown(rows, model_name, input_path, gold_path, is_stub,
@@ -227,24 +322,7 @@ def to_markdown(rows, model_name, input_path, gold_path, is_stub,
     lines.append("")
 
     if repeats > 1 and rows:
-        stable, winners = stability(rows)
-        if stable:
-            lines += [
-                f"> **Порядок систем устойчив.** В каждом из {repeats} прогонов лучшей",
-                f"> по accuracy оказалась одна и та же система — {winners[0]}. Вывод",
-                "> сравнения этими повторами поддержан.",
-                "",
-            ]
-        else:
-            order = " → ".join(winners)
-            lines += [
-                f"> **Разброс не позволяет назвать победителя.** По прогонам лучшей",
-                f"> оказывалась то одна система, то другая: {order}. Это свойство не",
-                "> кода, а эндпоинта: недетерминизм остаётся при `temperature: 0.0` и",
-                "> `seed`. Пока порядок не устойчив, из таблицы следует только то, что",
-                "> харнесс работает, — но не то, какая система лучше.",
-                "",
-            ]
+        lines += _verdict_block(rows, repeats)
     else:
         lines += [
             "> **Из одного прогона этой таблицы вывод не следует.** Два одинаковых",
@@ -282,7 +360,8 @@ def to_markdown(rows, model_name, input_path, gold_path, is_stub,
         f"  --systems {' '.join(systems)} \\",
         f"  --top-k {top_ks} \\",
         f"  --repeats {repeats} \\",
-        "  --out docs/baselines_compared.md",
+        "  --out docs/baselines_compared.md \\",
+        "  --save-rows docs/baselines_compared.rows.json",
         "```",
         "",
     ]
@@ -313,6 +392,11 @@ def main(argv: list[str] | None = None) -> int:
                         default=b4_selective.DEFAULT_CONFIDENCE_THRESHOLD,
                         help="Порог уверенности у B4.")
     parser.add_argument("--out", default=None, help="Куда записать markdown-заметку.")
+    parser.add_argument("--save-rows", default=None,
+                        help="Куда сложить сырые строки прогонов (JSON). Заметка "
+                             "печатает медиану и края, а здесь остаются все "
+                             "значения — без них таблицу нельзя пересобрать иначе "
+                             "как повторив прогон на модели.")
     args = parser.parse_args(argv)
 
     is_stub = args.model_command is None and not args.model_api
@@ -340,6 +424,11 @@ def main(argv: list[str] | None = None) -> int:
                            transport=transport,
                            top_ks=" ".join(str(k) for k in args.top_k),
                            systems=tuple(args.systems), repeats=args.repeats)
+
+    if args.save_rows:
+        Path(args.save_rows).write_text(
+            json.dumps(rows, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(f"compare_baselines: сырые строки в {args.save_rows}", file=sys.stderr)
 
     if args.out:
         Path(args.out).write_text(markdown + "\n", encoding="utf-8")

@@ -1,0 +1,182 @@
+[
+  {
+    "system": "B1 (BM25, top-k=3)",
+    "repeats": 3,
+    "values": {
+      "accuracy": [
+        0.542,
+        0.583,
+        0.583
+      ],
+      "macro_f1": [
+        0.518,
+        0.55,
+        0.552
+      ],
+      "evidence_f1": [
+        0.814,
+        0.817,
+        0.825
+      ],
+      "sfwr": [
+        0.056,
+        0.111,
+        0.111
+      ],
+      "coverage": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "augrc": [
+        0.138,
+        0.156,
+        0.175
+      ]
+    },
+    "answered": 24,
+    "total": 24,
+    "fallbacks": 0,
+    "accuracy": 0.583,
+    "macro_f1": 0.55,
+    "evidence_f1": 0.817,
+    "sfwr": 0.111,
+    "coverage": 1.0,
+    "augrc": 0.156
+  },
+  {
+    "system": "B2 (весь пак)",
+    "repeats": 3,
+    "values": {
+      "accuracy": [
+        0.583,
+        0.583,
+        0.667
+      ],
+      "macro_f1": [
+        0.546,
+        0.552,
+        0.625
+      ],
+      "evidence_f1": [
+        0.841,
+        0.873,
+        0.889
+      ],
+      "sfwr": [
+        0.056,
+        0.056,
+        0.111
+      ],
+      "coverage": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "augrc": [
+        0.109,
+        0.144,
+        0.183
+      ]
+    },
+    "answered": 24,
+    "total": 24,
+    "fallbacks": 0,
+    "accuracy": 0.583,
+    "macro_f1": 0.552,
+    "evidence_f1": 0.873,
+    "sfwr": 0.056,
+    "coverage": 1.0,
+    "augrc": 0.144
+  },
+  {
+    "system": "B3 (пак + чекер)",
+    "repeats": 3,
+    "values": {
+      "accuracy": [
+        0.667,
+        0.667,
+        0.708
+      ],
+      "macro_f1": [
+        0.61,
+        0.618,
+        0.658
+      ],
+      "evidence_f1": [
+        0.862,
+        0.88,
+        0.88
+      ],
+      "sfwr": [
+        0.056,
+        0.111,
+        0.111
+      ],
+      "coverage": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "augrc": [
+        0.083,
+        0.089,
+        0.103
+      ]
+    },
+    "answered": 24,
+    "total": 24,
+    "fallbacks": 0,
+    "accuracy": 0.667,
+    "macro_f1": 0.618,
+    "evidence_f1": 0.88,
+    "sfwr": 0.111,
+    "coverage": 1.0,
+    "augrc": 0.089
+  },
+  {
+    "system": "B4 (отказ, votes=3)",
+    "repeats": 3,
+    "values": {
+      "accuracy": [
+        0.733,
+        0.857,
+        0.929
+      ],
+      "macro_f1": [
+        0.573,
+        0.792,
+        0.897
+      ],
+      "evidence_f1": [
+        0.831,
+        0.833,
+        0.866
+      ],
+      "sfwr": [
+        0.0,
+        0.0,
+        0.1
+      ],
+      "coverage": [
+        0.583,
+        0.583,
+        0.625
+      ],
+      "augrc": [
+        0.118,
+        0.147,
+        0.17
+      ]
+    },
+    "answered": 14,
+    "total": 24,
+    "fallbacks": 0,
+    "accuracy": 0.857,
+    "macro_f1": 0.792,
+    "evidence_f1": 0.833,
+    "sfwr": 0.0,
+    "coverage": 0.583,
+    "augrc": 0.147
+  }
+]

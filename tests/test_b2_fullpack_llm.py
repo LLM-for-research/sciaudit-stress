@@ -286,14 +286,19 @@ def test_comparison_can_run_through_the_api_transport(tmp_path):
 # обязан уметь повторы и обязан прямо говорить, когда разброс не позволяет
 # назвать победителя.
 
-def _aggregated(name, accuracies):
+def _aggregated(name, accuracies, coverage=1.0):
     """Строка таблицы в том виде, в каком её возвращает агрегация по повторам."""
     import statistics
     row = {"system": name, "repeats": len(accuracies), "values": {},
            "answered": 17, "total": 17, "fallbacks": 0}
     for metric in compare_baselines.METRICS:
-        values = accuracies if metric == "accuracy" else [0.5] * len(accuracies)
-        row["values"][metric] = list(values)
+        if metric == "accuracy":
+            values = list(accuracies)
+        elif metric == "coverage":
+            values = [coverage] * len(accuracies)
+        else:
+            values = [0.5] * len(accuracies)
+        row["values"][metric] = values
         row[metric] = statistics.median(values)
     return row
 
@@ -319,23 +324,54 @@ def test_a_single_value_is_printed_without_a_fake_spread():
     assert compare_baselines._cell(row, "accuracy") == "0.500"
 
 
-def test_an_unstable_order_is_reported_as_unstable():
+def test_overlapping_spreads_name_no_winner():
     """Главное, ради чего делаются повторы: честный отказ назвать победителя."""
     rows = [_aggregated("B1", [0.6, 0.4]), _aggregated("B2", [0.5, 0.7])]
-    stable, winners = compare_baselines.stability(rows)
-    assert (stable, winners) == (False, ["B1", "B2"])
+    verdict, leader, _ = compare_baselines.stability(rows)
+    assert verdict == "none"
 
     md = compare_baselines.to_markdown(rows, "m", "in", "gold", is_stub=False, repeats=2)
     assert "не позволяет назвать победителя" in md
     assert "вывод не следует" not in md   # оговорка про один прогон здесь неуместна
 
 
-def test_a_stable_order_says_so():
-    rows = [_aggregated("B1", [0.6, 0.62]), _aggregated("B2", [0.5, 0.5])]
-    stable, winners = compare_baselines.stability(rows)
-    assert stable and winners == ["B1", "B1"]
-    assert "Порядок систем устойчив" in compare_baselines.to_markdown(
+def test_a_leader_is_named_only_when_its_worst_run_beats_every_best_run():
+    """Сравнение доминированием, а не победами по прогонам.
+
+    Победы по прогонам зависят от того, какой прогон с каким сопоставить, —
+    то есть от случайности. Доминирование от сопоставления не зависит.
+    """
+    rows = [_aggregated("B1", [0.60, 0.62]), _aggregated("B2", [0.50, 0.55])]
+    verdict, leader, _ = compare_baselines.stability(rows)
+    assert (verdict, leader["system"]) == ("strict", "B1")
+    assert "лидер устойчив" in compare_baselines.to_markdown(
         rows, "m", "in", "gold", is_stub=False, repeats=2)
+
+
+def test_touching_spreads_are_called_touching_not_a_win():
+    rows = [_aggregated("B3", [0.667, 0.708]), _aggregated("B2", [0.583, 0.667])]
+    verdict, leader, _ = compare_baselines.stability(rows)
+    assert (verdict, leader["system"]) == ("weak", "B3")
+    assert "касаются" in compare_baselines.to_markdown(
+        rows, "m", "in", "gold", is_stub=False, repeats=2)
+
+
+def test_a_system_that_abstains_is_kept_out_of_the_accuracy_comparison():
+    """Иначе победителем объявляется тот, кто отказался от трудного.
+
+    Accuracy считается только по отвеченным инстансам. У системы с покрытием
+    0.58 это качество на подмножестве, которое она сочла посильным, и рядом с
+    системой со сплошным покрытием оно не стоит.
+    """
+    rows = [_aggregated("B2", [0.583, 0.667]),
+            _aggregated("B4", [0.857, 0.929], coverage=0.583)]
+    compared = compare_baselines.comparable_rows(rows, "accuracy")
+    assert [row["system"] for row in compared] == ["B2"]
+    # AUGRC покрытием не надувается — по ней сравниваются все
+    assert len(compare_baselines.comparable_rows(rows, "augrc")) == 2
+
+    md = compare_baselines.to_markdown(rows, "m", "in", "gold", is_stub=False, repeats=2)
+    assert "по accuracy с остальными не сравнивается" in md
 
 
 def test_repeats_below_one_are_refused(tmp_path):

@@ -64,7 +64,7 @@ jobs:
           uv run python -m sciaudit.schemas.validate_predictions /tmp/b2.jsonl \
             --input examples/sample_inputs.jsonl
 
-      # --- Ворота утечки: §10.1 (запрещённые ключи) и §10.4 (пересечение сплитов) ---
+      # --- Ворота утечки: §10.1–§10.4 и §5.5 ---
       - name: Скан запрещённых ключей (ворота утечки)
         run: |
           uv run python -m sciaudit.leakage.forbidden_key_scan \
@@ -73,6 +73,45 @@ jobs:
         run: |
           uv run python -m sciaudit.leakage.split_overlap_check \
             examples data_public/public_warmup data_public/public_dev
+
+      # Пробы на утечку метки. Каждая учит слабую модель на признаках, которых
+      # для вердикта быть недостаточно, и сравнивает её с перестановочным
+      # распределением. Порог утечки p < 0.05, подозрение печатается и
+      # пропускает: на десятках инстансов граница широкая, и гейт, краснеющий
+      # на шуме, перестают читать.
+      - name: Проба на метаданных (§10.2)
+        run: |
+          for split in public_warmup public_dev; do
+            uv run python -m sciaudit.leakage.metadata_probe \
+              --inputs "data_public/$split/inputs.jsonl" \
+              --gold "data_public/$split/gold.jsonl"
+          done
+      - name: Проба на одном claim (§10.3)
+        run: |
+          for split in public_warmup public_dev; do
+            uv run python -m sciaudit.leakage.claim_only_probe \
+              --inputs "data_public/$split/inputs.jsonl" \
+              --gold "data_public/$split/gold.jsonl"
+          done
+      - name: Проверка идентификаторов (§5.5)
+        run: |
+          uv run python -m sciaudit.leakage.id_randomness_check \
+            --inputs examples/sample_inputs.jsonl \
+                     data_public/public_warmup/inputs.jsonl \
+                     data_public/public_dev/inputs.jsonl
+          uv run python -m sciaudit.leakage.id_randomness_check \
+            --inputs data_public/public_dev/inputs.jsonl \
+            --gold data_public/public_dev/gold.jsonl
+
+      # --- Репетиция скрытой оценки: седьмой шаг стандарта готовности §8.1 ---
+      # Нарезка по группам, экспорт студенческой половины без gold, прогон B0 по
+      # ней, валидация и скоринг на штабной стороне. Модель не дёргается, так что
+      # шаг ничего не стоит и гоняется на каждом коммите.
+      - name: Репетиция скрытой оценки (§8.1, §10.5)
+        run: |
+          uv run python -m sciaudit.evaluator.hidden_dry_run \
+            --internal data_paper_derived/*.internal_annotation.jsonl \
+            --by seed
 
       # --- Замкнутый readiness-loop на публичных данных (§8.1) ---
       # inputs -> validate -> B0 -> validate predictions -> evaluator -> metrics
@@ -147,9 +186,13 @@ jobs:
             --output /tmp/b0_dev.jsonl
       - name: Оценка public_dev через evaluator
         run: |
+          # --stress включает срезы §12.6 и отказ по стресс-типу §12.5. Стресс-тип
+          # приватен, поэтому срезы считаются только здесь, на штабной стороне, и
+          # никогда не выводятся из публичного gold.
           uv run python -m sciaudit.evaluator.score \
             --pred /tmp/b0_dev.jsonl \
             --gold data_public/public_dev/gold.jsonl \
+            --stress data_paper_derived/*.internal_annotation.jsonl \
             --out /tmp/dev_metrics.json \
             --report /tmp/dev_report.md
           cat /tmp/dev_report.md >> "$GITHUB_STEP_SUMMARY"
@@ -185,3 +228,51 @@ jobs:
           path: |
             /tmp/warmup_metrics.json
             /tmp/warmup_report.md
+
+  # --- §6.4: образ шаблона системы обязан собираться и запускаться ---
+  # Отдельной задачей, а не шагом: сборка образа не зависит от тестов, и при
+  # падении сразу видно, что сломалось — рельса или контейнер.
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Установка uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Синхронизация по локфайлу
+        run: uv sync --locked
+
+      - name: Сборка образа шаблона системы
+        run: |
+          set -o pipefail
+          docker build -t sciaudit-system-template system_template/ 2>&1 | tee /tmp/build.log
+      - name: Образ собран по локфайлу, а не резолвом на месте
+        run: |
+          if grep -q "НЕ воспроизводим" /tmp/build.log; then
+            echo "system_template/uv.lock отсутствует в контексте сборки:"
+            echo "образ невоспроизводим, §6.4 не выполнен."
+            exit 1
+          fi
+
+      # Контракт запуска — тот же, по которому команды сдают системы:
+      # вход монтируется только на чтение, предсказания пишутся в /output.
+      - name: Прогон образа по контракту
+        run: |
+          mkdir -p /tmp/container_out
+          docker run --rm \
+            -v "$PWD/data_public/public_warmup:/input:ro" \
+            -v /tmp/container_out:/output \
+            sciaudit-system-template \
+            python run.py --input /input/inputs.jsonl --output /output/predictions.jsonl
+      - name: Предсказания из образа валидны по схеме
+        run: |
+          uv run python -m sciaudit.schemas.validate_predictions \
+            /tmp/container_out/predictions.jsonl \
+            --input data_public/public_warmup/inputs.jsonl
+      - name: Образ выдал по предсказанию на каждый вход
+        run: |
+          inputs=$(wc -l < data_public/public_warmup/inputs.jsonl)
+          preds=$(wc -l < /tmp/container_out/predictions.jsonl)
+          echo "входов $inputs, предсказаний $preds"
+          test "$inputs" -eq "$preds"
