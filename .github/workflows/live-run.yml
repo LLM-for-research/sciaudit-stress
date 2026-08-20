@@ -1,0 +1,60 @@
+# Прогон бейзлайнов на настоящей модели. Запускается только руками.
+#
+# Почему не в общем CI: один прогон сравнения — это 96 вызовов модели, то есть
+# деньги на каждый коммит. Хуже другое: эндпоинт недетерминирован (замер — в
+# docs/b1_vs_b2.md), метрики плавают между одинаковыми прогонами, и обычный CI
+# начал бы краснеть на шуме вместо поломок. Секреты к тому же не отдаются на PR
+# из форка, так что для внешнего контрибьютора такой шаг всегда падал бы.
+name: Живой прогон на модели
+
+on:
+  workflow_dispatch:
+    inputs:
+      split:
+        description: "Срез данных"
+        type: choice
+        default: data_public/public_dev
+        options:
+          - data_public/public_dev
+          - data_public/public_warmup
+      top_k:
+        description: "Бюджеты ретрива для B1, через пробел"
+        type: string
+        default: "1 2 3"
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    env:
+      SCIAUDIT_BASE_URL: ${{ secrets.SCIAUDIT_BASE_URL }}
+      SCIAUDIT_MODEL: ${{ secrets.SCIAUDIT_MODEL }}
+      SCIAUDIT_API_KEY: ${{ secrets.SCIAUDIT_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+
+      # Эндпоинт может быть жив, а бюджета токенов не хватать на ответ: у
+      # reasoning-моделей рассуждение списывается из тех же max_tokens. --ping
+      # ловит и то, и другое до того, как прогон потратит деньги впустую.
+      - name: Доступ к модели жив?
+        run: uv run python -m sciaudit.baselines.model_client --ping
+
+      - name: Сравнение B1 и B2 на живой модели
+        run: |
+          uv run python -m sciaudit.baselines.compare_b1_b2 \
+            --input "${{ inputs.split }}/inputs.jsonl" \
+            --gold "${{ inputs.split }}/gold.jsonl" \
+            --model-api \
+            --top-k ${{ inputs.top_k }} \
+            --out b1_vs_b2.md
+          cat b1_vs_b2.md >> "$GITHUB_STEP_SUMMARY"
+
+      # Числа одного прогона ничего не решают, поэтому результат кладётся
+      # артефактом, а не коммитится в docs/ автоматически.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: b1-vs-b2-live
+          path: b1_vs_b2.md
