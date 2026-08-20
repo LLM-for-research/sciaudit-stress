@@ -39,6 +39,31 @@ jobs:
           uv run python -m sciaudit.schemas.validate_predictions /tmp/b0.jsonl \
             --input examples/sample_inputs.jsonl
 
+      # --- Бейзлайны на модели: прогоняются с детерминированной заглушкой.
+      # Доступа к модели в CI нет (issue #12), но точка входа, ретрив, разбор
+      # ответа и контракт выхода обязаны проверяться на каждом коммите: именно
+      # мёртвый CLI однажды проехал мимо зелёного CI.
+      - name: Smoke-прогон бейзлайна B1
+        run: |
+          uv run python -m sciaudit.baselines.b1_bm25_llm \
+            --input examples/sample_inputs.jsonl \
+            --output /tmp/b1.jsonl --top-k 2 \
+            --model-command "python -m sciaudit.baselines.stub_model" \
+            --model-name ci-stub-not-a-model
+      - name: Smoke-прогон бейзлайна B2
+        run: |
+          uv run python -m sciaudit.baselines.b2_fullpack_llm \
+            --input examples/sample_inputs.jsonl \
+            --output /tmp/b2.jsonl \
+            --model-command "python -m sciaudit.baselines.stub_model" \
+            --model-name ci-stub-not-a-model
+      - name: Валидация предсказаний B1 и B2
+        run: |
+          uv run python -m sciaudit.schemas.validate_predictions /tmp/b1.jsonl \
+            --input examples/sample_inputs.jsonl
+          uv run python -m sciaudit.schemas.validate_predictions /tmp/b2.jsonl \
+            --input examples/sample_inputs.jsonl
+
       # --- Ворота утечки: §10.1 (запрещённые ключи) и §10.4 (пересечение сплитов) ---
       - name: Скан запрещённых ключей (ворота утечки)
         run: |
@@ -73,6 +98,15 @@ jobs:
             --report /tmp/warmup_report.md
       - name: Публикация warm-up метрик в сводку прогона
         run: cat /tmp/warmup_report.md >> "$GITHUB_STEP_SUMMARY"
+
+      # --- Контроль B1 против B2 (§11.4): помогает ли ретрив ---
+      - name: Сравнение B1 и B2 на публичном warm-up
+        run: |
+          uv run python -m sciaudit.baselines.compare_b1_b2 \
+            --input data_public/public_warmup/inputs.jsonl \
+            --gold data_public/public_warmup/gold.jsonl \
+            --out /tmp/b1_vs_b2.md
+          cat /tmp/b1_vs_b2.md >> "$GITHUB_STEP_SUMMARY"
       - name: Загрузка warm-up метрик как артефакта
         uses: actions/upload-artifact@v4
         with:
