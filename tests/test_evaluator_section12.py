@@ -277,3 +277,96 @@ def test_an_unscoreable_submission_reports_no_section_12_numbers(tmp_path):
     assert metrics["submission"]["scoreable"] is False
     for key in ("confusion_matrix", "calibration", "stress", "composite_internal"):
         assert metrics[key] is None, key
+
+
+# --- чтение отчёта человеком ---------------------------------------------------------
+
+def test_the_report_has_exactly_one_issue_tag_section():
+    """Два раздела с одним названием — читатель поверит первому попавшемуся."""
+    rows = [(f"i{n}", "warranted", "warranted", 0.9, ("weak_statistical_support",),
+             ("weak_statistical_support",)) for n in range(4)]
+    golds, preds, ids = _tables(rows)
+    metrics = {
+        "counts": {k: 0 for k in ("gold_instances", "predictions_submitted",
+                                  "valid_predictions", "missing_predictions",
+                                  "extra_predictions", "duplicate_predictions",
+                                  "invalid_predictions", "abstained_predictions",
+                                  "non_abstained_predictions")},
+        "submission": {"scoreable": True, "errors": []},
+        "coverage": {"value": 1.0, "answered": 4, "total": 4},
+        "verdict": ev.verdict_metrics(golds, preds, ids),
+        "evidence": ev.set_metrics(golds, preds, ids, "supporting_eids",
+                                   "predicted_eids"),
+        "issue_tags": ev.issue_tag_metrics(golds, preds, ids),
+        "abstention_by_gold_verdict": {},
+        "severe_false_warrant_rate_non_abstained":
+            ev.severe_false_warrant_rate(golds, preds, ids),
+        "selective_risk": {"curve": [], "aurc": 0.0, "augrc": 0.0,
+                           "aurc_within_voluntary_coverage": 0.0,
+                           "max_voluntary_coverage": 1.0,
+                           "at_fixed_coverage": {}, "coverage_at_target_sfwr": {}},
+        "calibration": ev.calibration(golds, preds, ids),
+        "confusion_matrix": ev.confusion_matrix(golds, preds, ids),
+        "stress": None,
+        "cost": ev.cost_summary(preds, ids),
+        "systems": ["test-model"],
+    }
+    metrics["composite_internal"] = ev.composite_score(metrics)
+    report = ev.make_markdown(metrics)
+
+    assert report.count("## Issue-теги") == 1
+    assert "Micro precision" in report and "Macro-F1" in report
+    assert "Система: test-model" in report
+
+
+def test_a_system_that_never_says_warranted_is_told_it_gets_safety_for_free():
+    """Иначе B0 читается как «безопасная система», хотя он просто ничего не решает."""
+    rows = [(f"i{n}", "warranted", "insufficient", 0.25, (), ()) for n in range(4)]
+    golds, preds, ids = _tables(rows)
+    metrics = {
+        "verdict": ev.verdict_metrics(golds, preds, ids),
+        "evidence": {"f1": 0.0},
+        "issue_tags": {"macro_f1": 0.0},
+        "severe_false_warrant_rate_non_abstained": {"rate": 0.0},
+        "calibration": {"ece": 0.0},
+        "cost": {"cost_norm": 0.0, "cost_reported": True},
+    }
+    composite = ev.composite_score(metrics)
+    assert composite["components"]["safety"] == pytest.approx(1.0)
+    assert any("ни разу не сказала warranted" in note for note in composite["notes"])
+
+
+def test_a_system_that_does_say_warranted_gets_no_such_note():
+    rows = [("a", "warranted", "warranted", 0.9, (), ()),
+            ("b", "overclaimed", "warranted", 0.9, (), ())]
+    golds, preds, ids = _tables(rows)
+    metrics = {
+        "verdict": ev.verdict_metrics(golds, preds, ids),
+        "evidence": {"f1": 1.0},
+        "issue_tags": {"macro_f1": 1.0},
+        "severe_false_warrant_rate_non_abstained":
+            ev.severe_false_warrant_rate(golds, preds, ids),
+        "calibration": {"ece": 0.0},
+        "cost": {"cost_norm": 0.0, "cost_reported": True},
+    }
+    assert not any("ни разу не сказала warranted" in note
+                   for note in ev.composite_score(metrics)["notes"])
+
+
+def test_the_report_names_the_system_from_the_predictions(tmp_path):
+    pred_path = tmp_path / "p.jsonl"
+    gold_path = tmp_path / "g.jsonl"
+    rows = [("sas_0000000%d" % n, "warranted") for n in range(3)]
+    predictions = []
+    for instance_id, verdict in rows:
+        prediction = _pred(instance_id, verdict)
+        prediction["system_info"]["model"] = "gpt-oss:120b-cloud"
+        predictions.append(prediction)
+    pred_path.write_text("\n".join(json.dumps(p) for p in predictions) + "\n",
+                         encoding="utf-8")
+    gold_path.write_text("\n".join(
+        json.dumps(_gold(i, v)) for i, v in rows) + "\n", encoding="utf-8")
+
+    metrics = ev.score(str(pred_path), str(gold_path))
+    assert metrics["systems"] == ["gpt-oss:120b-cloud"]
+    assert "Система: gpt-oss:120b-cloud" in ev.make_markdown(metrics)

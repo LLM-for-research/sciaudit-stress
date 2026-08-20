@@ -637,6 +637,28 @@ COMPOSITE_WEIGHTS = {
 }
 
 
+def _free_safety_note(metrics):
+    """Не даётся ли слагаемое безопасности даром.
+
+    ``1 − SFWR`` максимально у системы, которая **никогда** не говорит
+    ``warranted``: обосновать неверное она не может по построению. Так устроен
+    B0, и без оговорки его композит читается как «безопасная система», хотя
+    безопасность здесь — синоним бесполезности. То же и с калибровкой:
+    честно-неуверенная система получает почти полный балл.
+    """
+    verdict = metrics.get("verdict") or {}
+    per_class = verdict.get("per_class") or {}
+    warranted = per_class.get("warranted") or {}
+    if not per_class:
+        return None
+    predicted_warranted = (warranted.get("tp", 0) or 0) + (warranted.get("fp", 0) or 0)
+    if predicted_warranted == 0:
+        return ("система ни разу не сказала warranted, поэтому слагаемое "
+                "безопасности даёт полный балл по построению — это свойство "
+                "поведения, а не качества")
+    return None
+
+
 def composite_score(metrics):
     """Композитный балл §12.7 — **только для внутреннего лидерборда**.
 
@@ -666,6 +688,10 @@ def composite_score(metrics):
         else 1.0 - calibration_metrics["ece"],
         "cost": None if cost.get("cost_norm") is None else 1.0 - cost["cost_norm"],
     }
+
+    free_safety = _free_safety_note(metrics)
+    if free_safety:
+        notes.append(free_safety)
 
     if components["cost"] is None:
         notes.append("слагаемое стоимости не посчитано: не задан --cost-budget, "
@@ -730,6 +756,9 @@ def make_markdown(metrics):
     submission = metrics["submission"]
 
     lines = ["# Отчёт evaluator'а Track A", ""]
+    systems = metrics.get("systems") or []
+    if systems:
+        lines += [f"Система: {', '.join(systems)}", ""]
 
     if not submission["scoreable"]:
         lines += [
@@ -783,12 +812,6 @@ def make_markdown(metrics):
         f"- Precision: {metrics['evidence']['precision']:.4f}",
         f"- Recall: {metrics['evidence']['recall']:.4f}",
         f"- F1: {metrics['evidence']['f1']:.4f}",
-        "",
-        "## Issue-теги",
-        "",
-        f"- Precision: {metrics['issue_tags']['precision']:.4f}",
-        f"- Recall: {metrics['issue_tags']['recall']:.4f}",
-        f"- F1: {metrics['issue_tags']['f1']:.4f}",
         "",
         "## Отказ от ответа",
         "",
@@ -893,6 +916,8 @@ def _tags_section(metrics):
         return []
     lines = [
         "", "## Issue-теги (§12.3)", "",
+        f"- Micro precision: {tags['micro']['precision']:.4f}",
+        f"- Micro recall: {tags['micro']['recall']:.4f}",
         f"- Micro-F1: {tags['micro']['f1']:.4f}",
         f"- Macro-F1: {tags['macro_f1']:.4f}",
         "",
@@ -1021,8 +1046,15 @@ def score(pred_path, gold_path, stress_paths=(), cost_budget_usd=None):
                                    validation_errors)
     total_gold = len(golds)
 
+    systems = sorted({
+        str((row.get("system_info") or {}).get("model"))
+        for row in preds.values()
+        if (row.get("system_info") or {}).get("model")
+    })
+
     metrics = {
         "submission": submission,
+        "systems": systems,
         "counts": {
             "gold_instances": total_gold,
             "predictions_submitted": len(pred_rows),
