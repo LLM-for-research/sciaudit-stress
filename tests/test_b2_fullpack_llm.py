@@ -231,3 +231,49 @@ def test_markdown_warns_loudly_when_numbers_come_from_the_stub():
     real_md = compare_b1_b2.to_markdown(rows, "real", "in", "gold", is_stub=False)
     assert "не моделью" in stub_md and "issue #12" in stub_md
     assert "не моделью" not in real_md
+    # Разброс между одинаковыми прогонами измерен и оказался больше разрыва
+    # между строками таблицы. Без этой оговорки таблицу прочтут как вывод.
+    assert "вывод не следует" in real_md and "вывод не следует" in stub_md
+
+
+def test_markdown_shows_the_command_that_actually_produced_it():
+    """Инструкция «как перегенерировать» обязана совпадать с прогоном.
+
+    Иначе она отправляет читателя на другой срез и другой транспорт, и числа
+    воспроизвести нельзя.
+    """
+    rows = [{"system": "B2 (весь пак)", "accuracy": 0.4, "macro_f1": 0.2,
+             "evidence_f1": 0.8, "sfwr": 0.1, "coverage": 1.0, "augrc": 0.25,
+             "answered": 24, "total": 24, "fallbacks": 0}]
+    md = compare_b1_b2.to_markdown(
+        rows, "real", "data_public/public_dev/inputs.jsonl",
+        "data_public/public_dev/gold.jsonl", is_stub=False,
+        transport="--model-api", top_ks="1 2 3")
+    assert "--input data_public/public_dev/inputs.jsonl" in md
+    assert "--model-api" in md
+    assert "--top-k 1 2 3" in md
+    assert "public_warmup" not in md
+
+
+def test_comparison_can_run_through_the_api_transport(tmp_path):
+    """B1 и B2 в сравнении обязаны ходить в модель тем же путём, что и поодиночке.
+
+    Пока харнесс умел только --model-command, сравнение через API было
+    невозможно, хотя оба бейзлайна его уже поддерживали.
+    """
+    calls = []
+
+    def fake_model(prompt):
+        calls.append(prompt)
+        return ('{"verdict": "insufficient", "confidence": 0.3, '
+                '"predicted_eids": [], "issue_tags": [], "abstain": true, '
+                '"rationale_short": "заглушка вместо сети"}')
+
+    rows = compare_b1_b2.compare(
+        WARMUP / "inputs.jsonl", WARMUP / "gold.jsonl",
+        model_command=None, model_name="api-model",
+        top_ks=(1,), workdir=str(tmp_path), model_fn=fake_model)
+
+    assert len(calls) == 17 * 2          # B1 top-k=1 и B2, по разу на инстанс
+    assert [r["system"] for r in rows] == ["B1 (BM25, top-k=1)", "B2 (весь пак)"]
+    assert all(r["coverage"] == 0.0 for r in rows)

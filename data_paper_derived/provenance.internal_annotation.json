@@ -1,0 +1,124 @@
+{
+  "schema_version": "paper_provenance_v1",
+  "purpose": "Приватная карта провенанса для инстансов, выведенных из настоящих статей. Связывает абстрагированный paper_id с источником и раскрывает карту псевдонимов, которой обезличены названия моделей и бенчмарков в публичных полях.",
+  "visibility": "private",
+  "visibility_note": "Файл никогда не входит в экспорт, видимый участникам. Он раскрывает, из какой статьи собран инстанс, и тем самым позволяет найти правильный ответ в оригинале. Переезжает в sciaudit-stress-private вместе с записями аннотаций.",
+  "abstraction_policy": {
+    "numbers": "Все числа в evidence взяты из статьи без изменений; округления и пересчёты не применялись.",
+    "wording": "Формулировки claim и evidence нормализованы, а не скопированы дословно: дословная строка находится поиском и выдаёт статью.",
+    "entities": "Названия моделей, бенчмарков и датасетов заменены псевдонимами по alias_map. Названия физических величин и типов возмущений оставлены как есть — они родовые и статью не выдают.",
+    "structure": "Логическая структура таблиц сохранена: строка evidence соответствует строке или колонке оригинальной таблицы."
+  },
+  "papers": {
+    "P001": {
+      "paper_title": "LIBERO-Plus: A Progressive Robustness Benchmark for Visual-Language-Action Models",
+      "authors": [
+        "Senyu Fei", "Siyin Wang", "Junhao Shi", "Zihao Dai", "Jikun Cai",
+        "Pengfang Qian", "Li Ji", "Xinzhe He", "Shiduo Zhang", "Zhaoye Fei",
+        "Jinlan Fu", "Jingjing Gong", "Xipeng Qiu"
+      ],
+      "affiliations": ["Fudan University", "Tongji University", "Shanghai Innovation Institute"],
+      "venue": "CVPR 2026",
+      "venue_note": "Версия CVF Open Access; в PDF есть водяной знак о том, что финальная версия публикуется на IEEE Xplore.",
+      "year": 2026,
+      "domain": "robotics_embodied_ai",
+      "source_url": "https://openaccess.thecvf.com/content/CVPR2026/papers/Fei_LIBERO-Plus_A_Progressive_Robustness_Benchmark_for_Visual-Language-Action_Models_CVPR_2026_paper.pdf",
+      "pdf_sha256": "8ec0602ef6ac4b6f08c796795fcb817427f6b0bff17e931ecb248946eb3f817a",
+      "pdf_pages": 10,
+      "retrieved": "2026-08-13",
+      "license_status": "не подтверждён",
+      "license_note": "CVF Open Access раздаёт PDF свободно, но условия переиспользования извлечённого контента до публичного релиза датасета нужно проверить отдельно.",
+      "extraction": {
+        "text_layer": "PyMuPDF 1.27.2 (fitz), page.get_text()",
+        "visual_check": "Страницы 3 и 5 отрендерены в PNG (Matrix 3x) и сверены глазами: таблица сравнения бенчмарков и таблица результатов по возмущениям.",
+        "checked_by": "assistant"
+      },
+      "instances": 13,
+      "alias_map": {
+        "the proposed benchmark": "LIBERO-Plus",
+        "the base benchmark": "LIBERO",
+        "prior benchmark A": "AGNOSTOS",
+        "prior benchmark B": "RL4VLA",
+        "prior benchmark C": "INT-ACT",
+        "prior benchmark D": "Gembench",
+        "prior benchmark E": "VLATest",
+        "prior benchmark F": "COLOSSEUM",
+        "Model A": "OpenVLA",
+        "Model B": "OpenVLA-OFT",
+        "Model C": "OpenVLA-OFT_w",
+        "Model D": "OpenVLA-OFT_m",
+        "Model E": "pi0",
+        "Model F": "pi0-fast",
+        "Model G": "Nora",
+        "Model H": "WorldVLA",
+        "Model I": "UniVLA",
+        "Model J": "RIPT-VLA",
+        "the proposed model": "OpenVLA-OFT, дообученная на сгенерированном наборе (в статье — Ours)"
+      },
+      "source_map": {
+        "table_1": "Таблица 1, сравнение бенчмарков обобщения (стр. 3)",
+        "table_2": "Таблица 2, качество моделей под возмущениями (стр. 5)",
+        "figure_1": "Рисунок 1, обзор бенчмарка (стр. 2)",
+        "figure_2": "Рисунок 2, архитектура бенчмарка (стр. 3)",
+        "figure_5": "Рисунок 5, робастность к освещению и абляция с зачернением (стр. 5)",
+        "figure_7": "Рисунок 7, теплокарта парных возмущений (стр. 8)",
+        "figure_8": "Рисунок 8, сравнение после дообучения на расширенном наборе (стр. 8)"
+      }
+    },
+    "P002": {
+      "paper_title": "BOOM: Benchmarking Out-Of-distribution Molecular Property Predictions of Machine Learning Models",
+      "authors": [
+        "Evan R. Antoniuk", "Shehtab Zaman", "Tal Ben-Nun", "Peggy Li",
+        "James Diffenderfer", "Busra Demirci", "Obadiah Smolenski", "Tim Hsu",
+        "Anna M. Hiszpanski", "Kenneth Chiu", "Bhavya Kailkhura", "Brian Van Essen"
+      ],
+      "affiliations": ["Lawrence Livermore National Laboratory", "Binghamton University"],
+      "venue": "NeurIPS 2025, Datasets and Benchmarks Track",
+      "year": 2025,
+      "domain": "chemistry_molecular_ml",
+      "source_url": "https://proceedings.neurips.cc/paper_files/paper/2025/file/b94263f7f98c9766ea9a09761ddd88ee-Paper-Datasets_and_Benchmarks_Track.pdf",
+      "code_url": "https://github.com/FLASK-LLNL/BOOM",
+      "pdf_sha256": "26f9b4ca8dd1b8a3589bed22b2e0521e2a95f63de57a0640b272c5d7a2352991",
+      "pdf_pages": 52,
+      "retrieved": "2026-08-13",
+      "license_status": "не подтверждён",
+      "license_note": "Материалы NeurIPS Proceedings открыты для чтения; условия переиспользования извлечённого контента до публичного релиза датасета нужно проверить отдельно.",
+      "extraction": {
+        "text_layer": "PyMuPDF 1.27.2 (fitz), page.get_text()",
+        "visual_check": "Страницы 8 и 26 отрендерены в PNG (Matrix 3x) и сверены глазами: усреднённые RMSE по типам представления, число параметров моделей, времена эпохи.",
+        "checked_by": "assistant"
+      },
+      "instances": 11,
+      "alias_map": {
+        "the proposed benchmark": "BOOM",
+        "Model A": "Random Forest",
+        "Model B": "Multilayer Perceptron",
+        "Model C": "ChemBERTa",
+        "Model D": "MoLFormer",
+        "Model E": "Regression Transformer",
+        "Model F": "ModernBERT",
+        "Model G": "Chemprop",
+        "Model H": "TGNN",
+        "Model I": "IGNN",
+        "Model J": "EGNN",
+        "Model K": "MACE",
+        "Model L": "GotenNet",
+        "Model M": "Graphormer-3D",
+        "Model N": "GeoFormer",
+        "Model O": "ET",
+        "the small dataset": "10k CSD",
+        "the large dataset": "QM9"
+      },
+      "source_map": {
+        "table_1": "Таблица 1, усреднённые RMSE по типам представления (стр. 8)",
+        "table_3": "Таблица 3, архитектуры и число параметров (стр. 26)",
+        "table_4": "Таблица 4, времена одной эпохи (стр. 26)",
+        "table_8": "Таблица 8, потабличная статистика по свойствам — в evidence сознательно не включена",
+        "section_4.2": "Раздел 4.2, абляция предобучения",
+        "section_4.3": "Раздел 4.3, подбор гиперпараметров",
+        "section_4.5": "Раздел 4.5, абляция по данным",
+        "section_4.7": "Раздел 4.7, статистический анализ"
+      }
+    }
+  }
+}

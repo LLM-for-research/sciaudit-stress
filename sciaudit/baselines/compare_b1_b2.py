@@ -29,7 +29,7 @@ import tempfile
 from pathlib import Path
 
 from sciaudit.baselines import b1_bm25_llm, b2_fullpack_llm
-from sciaudit.baselines.model_audit import count_fallbacks
+from sciaudit.baselines.model_audit import count_fallbacks, resolve_model
 from sciaudit.evaluator.score import score
 
 STUB_COMMAND = f"{sys.executable} -m sciaudit.baselines.stub_model"
@@ -59,27 +59,28 @@ def _row(name, metrics, predictions):
 
 
 def compare(input_path, gold_path, model_command, model_name, top_ks=DEFAULT_TOP_KS,
-            workdir=None):
+            workdir=None, model_fn=None):
     """Прогнать B2 и B1 на каждом top-k, вернуть список строк таблицы."""
     rows = []
+    common = {"model_command": model_command, "model_name": model_name,
+              "model_fn": model_fn}
     with tempfile.TemporaryDirectory(dir=workdir) as tmp:
         tmp = Path(tmp)
 
         for top_k in top_ks:
             out = tmp / f"b1_top{top_k}.jsonl"
-            preds = b1_bm25_llm.run(input_path, out, top_k=top_k,
-                                    model_command=model_command, model_name=model_name)
+            preds = b1_bm25_llm.run(input_path, out, top_k=top_k, **common)
             rows.append(_row(f"B1 (BM25, top-k={top_k})", score(out, gold_path), preds))
 
         out = tmp / "b2.jsonl"
-        preds = b2_fullpack_llm.run(input_path, out,
-                                    model_command=model_command, model_name=model_name)
+        preds = b2_fullpack_llm.run(input_path, out, **common)
         rows.append(_row("B2 (весь пак)", score(out, gold_path), preds))
 
     return rows
 
 
-def to_markdown(rows, model_name, input_path, gold_path, is_stub):
+def to_markdown(rows, model_name, input_path, gold_path, is_stub,
+                transport="--model-api", top_ks=DEFAULT_TOP_KS):
     lines = [
         "# B1 против B2: помогает ли ретрив",
         "",
@@ -120,6 +121,20 @@ def to_markdown(rows, model_name, input_path, gold_path, is_stub):
 
     lines += [
         "",
+        "> **Из одного прогона этой таблицы вывод не следует.** Два одинаковых",
+        "> прогона этого же скрипта при `temperature: 0.0` дали противоположный",
+        "> ответ: в первом лучшим оказался B1 с top-k=3 (accuracy 0.667 против",
+        "> 0.625 у B2), во втором — B2 (0.708 против 0.500). Одна ячейка сдвинулась",
+        "> на 16.7 пункта. Причина не в коде: два прогона B2 на одном входе",
+        "> разошлись в 6 вердиктах из 24, а `seed` разброс уменьшает, но не",
+        "> снимает — на облачном инференсе недетерминизм принадлежит эндпоинту,",
+        "> а не параметрам запроса.",
+        ">",
+        "> Практический вывод: пока каждая конфигурация не прогнана несколько раз",
+        "> и в таблице не стоит разброс, эти числа показывают, что харнесс",
+        "> работает, и не показывают, помогает ли ретрив. Лидербордное сравнение",
+        "> систем на таком эндпоинте требует того же — иначе места распределит шум.",
+        "",
         "Accuracy и macro-F1 считаются только по инстансам без отказа, цена отказа",
         "видна в колонке coverage; SFWR — доля severe-обоснований среди отвеченных.",
         "AUGRC — площадь под кривой обобщённого риска: она строится ранжированием по",
@@ -132,10 +147,10 @@ def to_markdown(rows, model_name, input_path, gold_path, is_stub):
         "",
         "```bash",
         "python -m sciaudit.baselines.compare_b1_b2 \\",
-        "  --input data_public/public_warmup/inputs.jsonl \\",
-        "  --gold data_public/public_warmup/gold.jsonl \\",
-        "  --model-command \"your-open-model-command\" \\",
-        "  --model-name \"your-open-model-id\" \\",
+        f"  --input {input_path} \\",
+        f"  --gold {gold_path} \\",
+        f"  {transport} \\",
+        f"  --top-k {top_ks} \\",
         "  --out docs/b1_vs_b2.md",
         "```",
         "",
@@ -149,17 +164,35 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--gold", required=True)
     parser.add_argument("--model-command", default=None,
                         help="Команда модели. По умолчанию — детерминированная заглушка.")
+    parser.add_argument("--model-api", action="store_true",
+                        help="Вызывать модель по OpenAI-совместимому API "
+                             "(SCIAUDIT_BASE_URL / SCIAUDIT_MODEL / SCIAUDIT_API_KEY).")
     parser.add_argument("--model-name", default=None)
     parser.add_argument("--top-k", type=int, nargs="+", default=list(DEFAULT_TOP_KS))
     parser.add_argument("--out", default=None, help="Куда записать markdown-заметку.")
     args = parser.parse_args(argv)
 
-    is_stub = args.model_command is None
-    model_command = args.model_command or STUB_COMMAND
-    model_name = args.model_name or (STUB_MODEL_NAME if is_stub else "open-model")
+    is_stub = args.model_command is None and not args.model_api
+    if is_stub:
+        # Заглушка — это тоже «команда модели», поэтому она проходит тем же путём.
+        args.model_command = STUB_COMMAND
+        args.model_name = args.model_name or STUB_MODEL_NAME
+    else:
+        args.model_name = args.model_name or "open-model"
 
-    rows = compare(args.input, args.gold, model_command, model_name, tuple(args.top_k))
-    markdown = to_markdown(rows, model_name, args.input, args.gold, is_stub)
+    try:
+        model_fn, model_command, model_name = resolve_model(args)
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+
+    rows = compare(args.input, args.gold, model_command, model_name,
+                   tuple(args.top_k), model_fn=model_fn)
+    transport = "--model-api" if args.model_api else (
+        "" if is_stub else f'--model-command "{args.model_command}"')
+    markdown = to_markdown(rows, model_name, args.input, args.gold, is_stub,
+                           transport=transport,
+                           top_ks=" ".join(str(k) for k in args.top_k))
 
     if args.out:
         Path(args.out).write_text(markdown + "\n", encoding="utf-8")

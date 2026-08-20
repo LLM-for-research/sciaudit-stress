@@ -194,3 +194,53 @@ def test_find_overlaps_reports_both_ids():
     problems = find_overlaps(splits)
     assert len(problems) == 1
     assert "sas_left0001" in problems[0] and "sas_right001" in problems[0]
+
+
+# --- регрессия: evidence_removal должен быть представим (issue #14 → #24) -------
+
+def _inst(instance_id, claim, pack):
+    return {"schema_version": "track_a_input_v1", "paper_id": "P001",
+            "instance_id": instance_id,
+            "claim": {"text": claim, "claim_type": "robustness", "scope": "s"},
+            "evidence_pack": pack,
+            "allowed_evidence_ids": [u["eid"] for u in pack]}
+
+
+def _unit(eid, text):
+    return {"eid": eid, "source_kind": "table_row", "modality": "table_text", "text": text}
+
+
+def test_evidence_removal_pair_is_not_a_duplicate(tmp_path):
+    """Трансформация §5.4 оставляет claim неизменным и режет пак — это законно.
+
+    Раньше сравнивались только тексты claim, поэтому любая корректная пара
+    seed -> evidence_removal ловилась как intra_split_duplicate, и сама
+    трансформация была непредставима ни в одном сплите.
+    """
+    claim = "Language perturbation causes the second-smallest average drop."
+    full = [_unit("e01", "language drops: 53.5, 17.6"), _unit("e02", "light drops: 68.4, 8.4")]
+    cut = [_unit("e01", "language drops: 53.5, 17.6")]
+
+    path = tmp_path / "inputs.jsonl"
+    path.write_text("\n".join(json.dumps(o) for o in
+                              [_inst("sas_seed0001", claim, full),
+                               _inst("sas_cut00001", claim, cut)]) + "\n", encoding="utf-8")
+
+    problems, _ = check([tmp_path])
+    assert problems == [], problems
+
+
+def test_true_duplicate_is_still_caught(tmp_path):
+    """Совпал и claim, и пак — это копия, ворота обязаны сработать."""
+    claim = "Method X outperforms all baselines."
+    pack = [_unit("e01", "Method X = 91.2, Baseline = 89.7")]
+
+    path = tmp_path / "inputs.jsonl"
+    path.write_text("\n".join(json.dumps(o) for o in
+                              [_inst("sas_orig0001", claim, pack),
+                               _inst("sas_copy0001", claim, list(pack))]) + "\n",
+                    encoding="utf-8")
+
+    problems, _ = check([tmp_path])
+    assert len(problems) == 1
+    assert "intra_split_duplicate" in problems[0]

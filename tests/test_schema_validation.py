@@ -246,23 +246,26 @@ def test_validate_inputs_cli_fails_on_private_fields(tmp_path):
 
 # --- configs/models.yaml остаётся внутренне согласованным ----------------------
 
-def test_model_profiles_are_coherent():
-    """Профили доступа к модели (решение #12) не должны разъезжаться.
+def test_model_config_is_coherent():
+    """configs/models.yaml описывает транспорт, а не бэкенд.
 
-    Ключ модели берётся из переменной окружения, а не из файла, поэтому здесь же
-    проверяется, что в конфиг не закоммитили секрет.
+    Привязки к vLLM или конкретному провайдеру быть не должно: эндпоинт, модель
+    и ключ приходят из окружения, конфиг держит только параметры запроса и
+    список одобренных моделей.
     """
-    yaml = pytest.importorskip("yaml")
+    import yaml
+
     cfg = yaml.safe_load((REPO / "configs" / "models.yaml").read_text(encoding="utf-8"))
 
-    profiles = cfg["profiles"]
-    assert cfg["default_profile"] in profiles
-    assert set(cfg["approved_profiles"]) <= set(profiles)
+    assert cfg.get("api_key_env"), "конфиг обязан называть переменную окружения с ключом"
+    assert "api_key" not in cfg, "ключ не хранится в конфиге"
+    assert "base_url" not in cfg, "адрес эндпоинта живёт в .env, а не в конфиге"
 
-    for name, profile in profiles.items():
-        assert "base_url" in profile, name
-        assert "model" in profile, name
-        assert profile.get("api_key_env"), f"{name}: профиль обязан называть переменную окружения"
-        assert "api_key" not in profile, f"{name}: ключ не хранится в конфиге"
-        # §6.1: прогон обязан быть воспроизводимым
-        assert profile.get("temperature") == 0.0, name
+    defaults = cfg["request_defaults"]
+    assert defaults["temperature"] == 0.0, "§6.1: прогон обязан быть воспроизводимым"
+    assert defaults["max_tokens"] > 0
+    assert defaults["timeout_seconds"] > 0
+    assert defaults["max_retries"] >= 1
+
+    assert isinstance(cfg["approved_models"], list), \
+        "§7.4 ограничивает модель, а не способ доступа к ней"

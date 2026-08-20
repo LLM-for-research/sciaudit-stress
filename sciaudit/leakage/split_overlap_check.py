@@ -11,13 +11,17 @@
 
 * **id_collision** — один `instance_id` встречается в двух сплитах;
 * **cross_split_claim** — claim из разных сплитов похожи не меньше порога;
-* **intra_split_duplicate** — внутри одного сплита два claim совпадают
-  дословно (после нормализации), то есть инстанс скопировали.
+* **intra_split_duplicate** — внутри одного сплита совпадают *и* claim, *и*
+  evidence pack, то есть инстанс скопировали целиком.
 
 Чем пересечение НЕ является — два случая, на которых проверка обязана молчать:
 
 * общий evidence pack при разных claim: это осознанный контроль (минимальная
   пара warranted/overclaimed на одном паке);
+* один и тот же claim при разных evidence pack: это трансформация
+  ``evidence_removal`` (§5.4), которая по определению оставляет claim
+  неизменным и убирает из пака ключевое подтверждение. Сравнение одних лишь
+  текстов claim делало эту трансформацию непредставимой ни в одном сплите;
 * почти одинаковые claim *внутри* одного сплита: ровно так выглядит стресс-пара
   seed → усиленный claim (§5.4). Поэтому внутри сплита ловится только точное
   совпадение, а порог похожести применяется исключительно между сплитами.
@@ -55,6 +59,21 @@ NON_SPLIT_PATTERNS = ("internal_annotation",)
 
 class OverlapError(Exception):
     """Файл не читается или аргументы некорректны — это отказ, а не пропуск."""
+
+
+def evidence_fingerprint(evidence_pack) -> tuple:
+    """Отпечаток пака: (eid, нормализованный текст) по каждой единице, по порядку.
+
+    Нужен, чтобы отличить настоящий дубликат от пары seed -> ``evidence_removal``:
+    у них совпадает claim, но пак урезан, и это законно.
+    """
+    if not isinstance(evidence_pack, list):
+        return ()
+    return tuple(
+        (str(unit.get("eid", "")), normalize(str(unit.get("text", ""))))
+        for unit in evidence_pack
+        if isinstance(unit, dict)
+    )
 
 
 def normalize(text: str) -> str:
@@ -96,6 +115,7 @@ def load_instances(path: Path) -> list[dict]:
         instances.append({
             "instance_id": obj.get("instance_id", f"<{path.name}:{line_no}>"),
             "claim": claim_text,
+            "evidence": evidence_fingerprint(obj.get("evidence_pack")),
             "where": f"{path}:{line_no}",
         })
     return instances
@@ -142,16 +162,18 @@ def find_overlaps(splits: dict[str, list[dict]], threshold: float = DEFAULT_THRE
                         )
 
     # --- внутри сплита ----------------------------------------------------
-    # Только дословное совпадение: почти одинаковые claim здесь легальны, это
-    # стресс-пара seed → усиленный claim.
+    # Дубликатом считается совпадение claim И пака. Почти одинаковые claim здесь
+    # легальны — это стресс-пара seed → усиленный claim; одинаковый claim при
+    # разных паках тоже легален — это evidence_removal.
     for name in names:
         items = splits[name]
         for i, x in enumerate(items):
             for y in items[i + 1:]:
-                if normalize(x["claim"]) == normalize(y["claim"]):
+                if (normalize(x["claim"]) == normalize(y["claim"])
+                        and x["evidence"] == y["evidence"]):
                     problems.append(
                         f"intra_split_duplicate: {x['instance_id']} и {y['instance_id']} "
-                        f"в {name} несут дословно один claim"
+                        f"в {name} несут дословно один claim и один evidence pack"
                     )
 
     return problems

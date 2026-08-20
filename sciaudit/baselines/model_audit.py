@@ -327,7 +327,13 @@ def build_arg_parser(description, default_model_name=DEFAULT_MODEL_NAME):
     parser.add_argument("--input", required=True, help="Путь к JSONL со входами.")
     parser.add_argument("--output", required=True, help="Путь к JSONL с предсказаниями.")
     parser.add_argument("--model-command", default=None,
-                        help="Shell-команда инференса. Промпт подаётся в stdin.")
+                        help="Shell-команда инференса. Промпт подаётся в stdin. "
+                             "Ключ в командной строке виден в ps — предпочитайте "
+                             "--model-api.")
+    parser.add_argument("--model-api", action="store_true",
+                        help="Вызывать модель по OpenAI-совместимому API (issue #12). "
+                             "Эндпоинт, модель и ключ берутся из .env или окружения: "
+                             "SCIAUDIT_BASE_URL, SCIAUDIT_MODEL, SCIAUDIT_API_KEY.")
     parser.add_argument("--model-name", default=default_model_name,
                         help="Идентификатор модели для system_info.model. "
                              "Именно модель, не команда запуска и не строка с ключом.")
@@ -338,19 +344,59 @@ def build_arg_parser(description, default_model_name=DEFAULT_MODEL_NAME):
     return parser
 
 
+def resolve_model(args):
+    """Выбрать транспорт: OpenAI-совместимый API (issue #12) или shell-команда.
+
+    Возвращает ``(model_fn, model_command, model_name)``. При работе через API
+    идентификатор модели берётся из ``SCIAUDIT_MODEL``, чтобы
+    ``system_info.model`` называл настоящую модель, а не заглушку.
+    """
+    use_api = getattr(args, "model_api", False)
+
+    if use_api and args.model_command:
+        raise ValueError("--model-api и --model-command взаимоисключающи.")
+
+    if not use_api:
+        return None, args.model_command, args.model_name
+
+    from sciaudit.baselines.model_client import ModelClientError, check_ready, make_model_fn
+
+    try:
+        model_fn = make_model_fn()
+    except ModelClientError as exc:
+        raise ValueError(str(exc)) from exc
+
+    config = model_fn.config
+    missing = check_ready(config)
+    if missing:
+        raise ValueError("доступ к модели не настроен: " + "; ".join(missing)
+                         + ". Заполните .env по образцу .env.example.")
+    if not config["approved"]:
+        print(f"ВНИМАНИЕ: модель {config['model']} не входит в approved_models — "
+              "прогон годится для разработки, но не для лидерборда.", file=sys.stderr)
+
+    model_name = args.model_name
+    if not model_name or model_name.endswith("open-model"):
+        model_name = config["model"]
+
+    return model_fn, None, model_name
+
+
 def run_cli(args, select_evidence, label):
     """Общее тело ``main`` бейзлайна. Возвращает код возврата процесса."""
     def log(message):
         print(f"{label}: {message}", file=sys.stderr)
 
     try:
+        model_fn, model_command, model_name = resolve_model(args)
         predictions = run(
             input_path=args.input,
             output_path=args.output,
             select_evidence=select_evidence,
-            model_command=args.model_command,
-            model_name=args.model_name,
+            model_command=model_command,
+            model_name=model_name,
             retries=args.retries,
+            model_fn=model_fn,
             timeout_seconds=args.timeout_seconds,
             log=log,
         )

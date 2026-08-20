@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "purpose": "Штабной манифест провенанса публичного dev-среза. Не студенческий файл; в inputs.jsonl не сливается.",
+  "status": "paper_derived",
+  "leakage_safe": "Файл намеренно не содержит меток, типов трансформации и указателей на статью: полный провенанс живёт в приватном репозитории.",
+  "derivation": {
+    "method": "механическая проекция приватных записей аннотации вычёркиванием приватных полей",
+    "tool": "python -m sciaudit.construction.derive_public",
+    "reproducible": "Публичные файлы не редактируются вручную. Правка вносится в приватную запись, после чего проекция перегенерируется."
+  },
+  "paper_id_range": {
+    "min": "P001",
+    "max": "P002",
+    "meaning": "Настоящие статьи. Синтетические заглушки занимают P901-P915."
+  },
+  "dataset_shape": {
+    "instances": 24,
+    "papers": 2,
+    "claim_types": {
+      "baseline_superiority": 5,
+      "robustness": 4,
+      "numerical_performance": 4,
+      "ablation": 5,
+      "bounded_generalization": 3,
+      "efficiency": 3
+    },
+    "evidence_units_total": 78,
+    "balance": "Все четыре вердикта присутствуют, ни один не занимает больше 50%."
+  },
+  "instances": [
+    {
+      "instance_id": "sas_lr82dimg",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 7,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_18lth9mg",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 4,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_b04yqpaj",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 2,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_xzpdcto2",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_j0t2wyix",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 2,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_4j2dxteo",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_qx8xbjxt",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_j6atsgl5",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_en2agxz0",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_faroodm8",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_qrpw847k",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 2,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_zs8475fa",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_xb1kecd5",
+      "paper_id": "P001",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_n2rmeb4z",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 5,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_fpqd3kf4",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 7,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_lbpb27l1",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 2,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_79ig3xvb",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 2,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_ds2eemmo",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_r1h4er06",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_hekt6a0s",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 3,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_w3tyi1xl",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 2,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_yazb2i64",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 2,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_5udwq7ho",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 4,
+      "checked_by_human": true
+    },
+    {
+      "instance_id": "sas_cmf3grle",
+      "paper_id": "P002",
+      "source": "paper_derived",
+      "evidence_units": 4,
+      "checked_by_human": true
+    }
+  ],
+  "review_required": "Каждый вердикт независимо проверен человеком по docs/human_verification_note_template.md перед включением в срез.",
+  "split_disjointness": "Прогонять python -m sciaudit.leakage.split_overlap_check examples data_public/public_warmup data_public/public_dev перед добавлением."
+}

@@ -1,0 +1,24 @@
+{"instance_id": "sas_lr82dimg", "gold": {"verdict": "warranted", "supporting_eids": ["e05", "e06", "e07"], "issue_tags": []}}
+{"instance_id": "sas_18lth9mg", "gold": {"verdict": "contradicted", "supporting_eids": ["e02", "e03", "e04"], "issue_tags": ["numerical_inconsistency"]}}
+{"instance_id": "sas_b04yqpaj", "gold": {"verdict": "contradicted", "supporting_eids": ["e02"], "issue_tags": ["numerical_inconsistency"]}}
+{"instance_id": "sas_xzpdcto2", "gold": {"verdict": "contradicted", "supporting_eids": ["e01", "e02"], "issue_tags": ["numerical_inconsistency", "non_comparable_baseline"]}}
+{"instance_id": "sas_j0t2wyix", "gold": {"verdict": "warranted", "supporting_eids": ["e01", "e02"], "issue_tags": []}}
+{"instance_id": "sas_4j2dxteo", "gold": {"verdict": "contradicted", "supporting_eids": ["e01", "e02", "e03"], "issue_tags": ["numerical_inconsistency"]}}
+{"instance_id": "sas_qx8xbjxt", "gold": {"verdict": "insufficient", "supporting_eids": ["e01", "e02", "e03"], "issue_tags": ["evidence_missing_or_incomplete"]}}
+{"instance_id": "sas_j6atsgl5", "gold": {"verdict": "warranted", "supporting_eids": ["e01", "e02", "e03"], "issue_tags": []}}
+{"instance_id": "sas_en2agxz0", "gold": {"verdict": "overclaimed", "supporting_eids": ["e02", "e03"], "issue_tags": ["claim_stronger_than_evidence"]}}
+{"instance_id": "sas_faroodm8", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01", "e02", "e03"], "issue_tags": ["unsupported_generalization"]}}
+{"instance_id": "sas_qrpw847k", "gold": {"verdict": "insufficient", "supporting_eids": ["e02"], "issue_tags": ["evidence_missing_or_incomplete"]}}
+{"instance_id": "sas_zs8475fa", "gold": {"verdict": "contradicted", "supporting_eids": ["e01", "e02", "e03"], "issue_tags": ["numerical_inconsistency", "claim_stronger_than_evidence"]}}
+{"instance_id": "sas_xb1kecd5", "gold": {"verdict": "insufficient", "supporting_eids": ["e01", "e03"], "issue_tags": ["weak_statistical_support", "evidence_missing_or_incomplete"]}}
+{"instance_id": "sas_n2rmeb4z", "gold": {"verdict": "warranted", "supporting_eids": ["e02", "e03", "e04", "e05"], "issue_tags": []}}
+{"instance_id": "sas_fpqd3kf4", "gold": {"verdict": "contradicted", "supporting_eids": ["e05", "e07"], "issue_tags": ["numerical_inconsistency"]}}
+{"instance_id": "sas_lbpb27l1", "gold": {"verdict": "warranted", "supporting_eids": ["e01"], "issue_tags": []}}
+{"instance_id": "sas_79ig3xvb", "gold": {"verdict": "contradicted", "supporting_eids": ["e02"], "issue_tags": ["numerical_inconsistency"]}}
+{"instance_id": "sas_ds2eemmo", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01", "e02", "e03"], "issue_tags": ["claim_stronger_than_evidence"]}}
+{"instance_id": "sas_r1h4er06", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01", "e02"], "issue_tags": ["claim_stronger_than_evidence", "unsupported_generalization"]}}
+{"instance_id": "sas_hekt6a0s", "gold": {"verdict": "insufficient", "supporting_eids": ["e01", "e02", "e03"], "issue_tags": ["evidence_missing_or_incomplete"]}}
+{"instance_id": "sas_w3tyi1xl", "gold": {"verdict": "warranted", "supporting_eids": ["e01", "e02"], "issue_tags": []}}
+{"instance_id": "sas_yazb2i64", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01", "e02"], "issue_tags": ["claim_stronger_than_evidence"]}}
+{"instance_id": "sas_5udwq7ho", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01", "e02", "e03", "e04"], "issue_tags": ["non_comparable_baseline"]}}
+{"instance_id": "sas_cmf3grle", "gold": {"verdict": "overclaimed", "supporting_eids": ["e01", "e02", "e03"], "issue_tags": ["weak_statistical_support", "evidence_missing_or_incomplete"]}}

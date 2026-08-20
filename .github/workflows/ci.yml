@@ -68,11 +68,11 @@ jobs:
       - name: Скан запрещённых ключей (ворота утечки)
         run: |
           uv run python -m sciaudit.leakage.forbidden_key_scan \
-            data_public/ examples/ --verbose
+            data_public/ examples/ data_paper_derived/ --verbose
       - name: Аудит пересечения сплитов
         run: |
           uv run python -m sciaudit.leakage.split_overlap_check \
-            examples data_public/public_warmup
+            examples data_public/public_warmup data_public/public_dev
 
       # --- Замкнутый readiness-loop на публичных данных (§8.1) ---
       # inputs -> validate -> B0 -> validate predictions -> evaluator -> metrics
@@ -107,6 +107,37 @@ jobs:
             --gold data_public/public_warmup/gold.jsonl \
             --out /tmp/b1_vs_b2.md
           cat /tmp/b1_vs_b2.md >> "$GITHUB_STEP_SUMMARY"
+      # --- Тот же цикл на срезе из настоящих статей (§8.1) ---
+      - name: Валидация входов public_dev
+        run: |
+          uv run python -m sciaudit.schemas.validate_inputs \
+            data_public/public_dev/inputs.jsonl
+      - name: Прогон B0 на public_dev
+        run: |
+          uv run python -m sciaudit.baselines.b0_always_insufficient \
+            --input data_public/public_dev/inputs.jsonl \
+            --output /tmp/b0_dev.jsonl
+      - name: Оценка public_dev через evaluator
+        run: |
+          uv run python -m sciaudit.evaluator.score \
+            --pred /tmp/b0_dev.jsonl \
+            --gold data_public/public_dev/gold.jsonl \
+            --out /tmp/dev_metrics.json \
+            --report /tmp/dev_report.md
+          cat /tmp/dev_report.md >> "$GITHUB_STEP_SUMMARY"
+
+      # --- Доступ к модели настроен? В CI ключа нет, поэтому только проверка,
+      # что конфиг читается и клиент честно сообщает, чего не хватает (issue #12).
+      - name: Проверка конфигурации доступа к модели
+        run: |
+          # Ключа в CI нет, поэтому «не готов» (код 1) — ожидаемый исход, и
+          # шаг его прощает. Не прощается код 2: это нечитаемый или сломанный
+          # configs/models.yaml, и он должен валить сборку, а не тонуть в `|| true`.
+          uv run python -m sciaudit.baselines.model_client --check; status=$?
+          if [ "$status" -ge 2 ]; then
+            echo "configs/models.yaml не читается (код $status)"; exit 1
+          fi
+
       - name: Загрузка warm-up метрик как артефакта
         uses: actions/upload-artifact@v4
         with:
