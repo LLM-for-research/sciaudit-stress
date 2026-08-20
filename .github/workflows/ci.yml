@@ -244,13 +244,16 @@ jobs:
         run: uv sync --locked
 
       - name: Сборка образа шаблона системы
-        run: |
-          set -o pipefail
-          docker build -t sciaudit-system-template system_template/ 2>&1 | tee /tmp/build.log
+        run: docker build -t sciaudit-system-template system_template/
+      # Режим сборки читается из самого образа. По логу его проверять нельзя:
+      # BuildKit печатает туда текст команды RUN, поэтому grep по предупреждению
+      # срабатывает и на успешной сборке — этот шаг однажды так и упал.
       - name: Образ собран по локфайлу, а не резолвом на месте
         run: |
-          if grep -q "НЕ воспроизводим" /tmp/build.log; then
-            echo "system_template/uv.lock отсутствует в контексте сборки:"
+          mode=$(docker run --rm sciaudit-system-template cat /etc/sciaudit_build_mode)
+          echo "режим сборки: $mode"
+          if [ "$mode" != "locked" ]; then
+            echo "system_template/uv.lock не попал в контекст сборки:"
             echo "образ невоспроизводим, §6.4 не выполнен."
             exit 1
           fi

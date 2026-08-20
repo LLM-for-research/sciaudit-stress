@@ -86,3 +86,15 @@ def test_the_image_pins_the_uv_version():
                 if "ghcr.io/astral-sh/uv" in line]
     assert uv_lines, "образ обязан брать uv из закреплённого источника"
     assert all(":latest" not in line for line in uv_lines), uv_lines
+
+
+def test_the_image_records_how_it_was_built():
+    """Режим сборки обязан быть свойством образа, а не строкой в логе.
+
+    Первая версия этой проверки грепала лог сборки на предупреждение о
+    невоспроизводимости — и падала на каждой успешной сборке: BuildKit печатает
+    в лог текст самой команды ``RUN``, а предупреждение лежит внутри неё.
+    """
+    dockerfile = (REPO / "system_template" / "Dockerfile").read_text(encoding="utf-8")
+    assert "/etc/sciaudit_build_mode" in dockerfile
+    assert "echo locked" in dockerfile and "echo resolved" in dockerfile

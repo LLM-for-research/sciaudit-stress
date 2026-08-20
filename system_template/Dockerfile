@@ -16,12 +16,16 @@ COPY pyproject.toml uv.lock* ./
 
 # С локфайлом сборка воспроизводима, без него uv резолвит на месте. Второй
 # случай допустим только на этапе разработки, поэтому он громко предупреждает.
+#
+# Режим записывается в образ. Проверять его по логу сборки нельзя: BuildKit
+# печатает в лог текст самой команды RUN, поэтому любой grep по предупреждению
+# находит его и на успешной сборке. Файл — свойство образа, а не журнала.
 RUN if [ -f uv.lock ]; then \
-        uv sync --no-dev --locked; \
+        uv sync --no-dev --locked && echo locked > /etc/sciaudit_build_mode; \
     else \
         echo "WARNING: в контексте сборки нет uv.lock — образ НЕ воспроизводим." >&2; \
         echo "         Выполните 'uv lock' в system_template/ и закоммитьте результат." >&2; \
-        uv sync --no-dev; \
+        uv sync --no-dev && echo resolved > /etc/sciaudit_build_mode; \
     fi
 
 # Кладём venv проекта в PATH, чтобы контракт запуска остался `python run.py ...`.
