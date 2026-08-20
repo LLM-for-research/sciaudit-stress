@@ -41,11 +41,11 @@ AUGRC — площадь под кривой обобщённого риска: 
 ## Как перегенерировать
 
 ```bash
-python -m sciaudit.baselines.compare_b1_b2 \
+python -m sciaudit.baselines.compare_baselines \
   --input data_public/public_dev/inputs.jsonl \
   --gold data_public/public_dev/gold.jsonl \
   --model-api \
   --top-k 1 2 3 \
-  --out docs/b1_vs_b2.md
+  --out docs/baselines_compared.md
 ```
 

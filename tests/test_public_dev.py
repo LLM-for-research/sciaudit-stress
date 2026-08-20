@@ -217,13 +217,19 @@ def test_readiness_loop_runs_on_the_dev_split(tmp_path):
     assert metrics["counts"]["gold_instances"] == len(list(read_jsonl(str(INPUTS))))
 
 
-def test_published_comparison_carries_the_variance_caveat():
-    """Опубликованная таблица без оговорки о разбросе читается как вывод.
+def test_published_comparison_states_what_the_spread_allows():
+    """Опубликованная таблица без утверждения о разбросе читается как вывод.
 
     Два одинаковых прогона сравнения дали противоположный ответ на вопрос
-    «помогает ли ретрив», поэтому оговорка — часть результата, а не украшение.
+    «помогает ли ретрив», поэтому разброс — часть результата, а не украшение.
+    Заметка обязана сказать одно из трёх: повторов не было и вывод не следует;
+    повторы были и порядок устойчив; повторы были и разброс победителя не
+    называет.
     """
-    note = (REPO / "docs" / "b1_vs_b2.md").read_text(encoding="utf-8")
-    assert "вывод не следует" in note
+    note = (REPO / "docs" / "baselines_compared.md").read_text(encoding="utf-8")
+    verdicts = ("вывод не следует", "Порядок систем устойчив",
+                "не позволяет назвать победителя")
+    assert sum(v in note for v in verdicts) == 1, "ровно одно утверждение о разбросе"
+    assert "Повторов каждой конфигурации" in note, "число повторов обязано быть названо"
     assert "--model-api" in note, "инструкция должна называть транспорт прогона"
     assert "public_warmup" not in note, "инструкция ссылается не на тот срез"

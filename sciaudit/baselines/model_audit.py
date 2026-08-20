@@ -9,6 +9,10 @@ evidence попадают в промпт. Эта разница выражен�
 * B1 отдаёт top-k по BM25;
 * B2 отдаёт весь evidence pack.
 
+Ещё два шва добавлены тем же способом и ровно с той же целью — держать разницу
+между бейзлайнами в одном месте: ``tool`` (детерминированный инструмент, разница
+B2 и B3) и ``audit`` (чем получается одно предсказание, разница B2 и B4).
+
 Тогда сравнение B1 против B2 измеряет вклад ретрива, а не разницу в промптах,
 парсинге или обработке отказов — иначе научный контроль ничего не контролирует.
 
@@ -312,16 +316,24 @@ def audit_instance(instance, select_evidence, model_command=None, model_name=Non
 
 def run(input_path, output_path, select_evidence, model_command=None, model_name=None,
         retries=1, model_fn=None, timeout_seconds=DEFAULT_TIMEOUT_SECONDS, log=None,
-        tool=None):
-    """Прочитать входы, записать по предсказанию на строку, вернуть их список."""
+        tool=None, audit=None):
+    """Прочитать входы, записать по предсказанию на строку, вернуть их список.
+
+    ``audit`` — чем получается одно предсказание. По умолчанию
+    :func:`audit_instance`, то есть один вызов модели. B4 подставляет сюда
+    ансамбль: несколько голосов на инстанс и правила отказа поверх них
+    (мануал §11.6). Сигнатура совпадает с :func:`audit_instance`, поэтому цикл
+    чтения, записи и подсчёта отказов остаётся общим для всех бейзлайнов.
+    """
     if model_command is None and model_fn is None:
         raise ValueError("this baseline requires either --model-command or model_fn.")
     if retries < 0:
         raise ValueError("--retries must not be negative.")
 
+    audit = audit or audit_instance
     predictions = []
     for _, instance in read_jsonl(input_path):
-        prediction, _ = audit_instance(
+        prediction, _ = audit(
             instance,
             select_evidence,
             model_command=model_command,
@@ -404,7 +416,7 @@ def resolve_model(args):
     return model_fn, None, model_name
 
 
-def run_cli(args, select_evidence, label, tool=None):
+def run_cli(args, select_evidence, label, tool=None, audit=None):
     """Общее тело ``main`` бейзлайна. Возвращает код возврата процесса."""
     def log(message):
         print(f"{label}: {message}", file=sys.stderr)
@@ -422,6 +434,7 @@ def run_cli(args, select_evidence, label, tool=None):
             timeout_seconds=args.timeout_seconds,
             log=log,
             tool=tool,
+            audit=audit,
         )
     except (ValueError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

@@ -111,14 +111,30 @@ jobs:
         run: |
           uv run python -m sciaudit.schemas.validate_predictions /tmp/b3_warmup.jsonl
 
+      # --- B4: тот же пак, ансамбль голосов и пять правил отказа (§11.6) ---
+      # Порог поставлен в 0, чтобы smoke-прогон проверял ветку ответа: у
+      # заглушки уверенность низкая, и с боевым порогом B4 отказался бы на всех
+      # инстансах, а сломанный путь ответа остался бы незамеченным.
+      - name: Smoke-прогон B4 с заглушкой
+        run: |
+          uv run python -m sciaudit.baselines.b4_selective \
+            --input data_public/public_warmup/inputs.jsonl \
+            --output /tmp/b4_warmup.jsonl \
+            --model-command "python -m sciaudit.baselines.stub_model" \
+            --model-name deterministic-stub-not-a-model \
+            --votes 2 --confidence-threshold 0.0
+      - name: Валидация предсказаний B4
+        run: |
+          uv run python -m sciaudit.schemas.validate_predictions /tmp/b4_warmup.jsonl
+
       # --- Контроль B1 против B2 (§11.4): помогает ли ретрив ---
       - name: Сравнение B1 и B2 на публичном warm-up
         run: |
-          uv run python -m sciaudit.baselines.compare_b1_b2 \
+          uv run python -m sciaudit.baselines.compare_baselines \
             --input data_public/public_warmup/inputs.jsonl \
             --gold data_public/public_warmup/gold.jsonl \
-            --out /tmp/b1_vs_b2.md
-          cat /tmp/b1_vs_b2.md >> "$GITHUB_STEP_SUMMARY"
+            --out /tmp/baselines_compared.md
+          cat /tmp/baselines_compared.md >> "$GITHUB_STEP_SUMMARY"
       # --- Тот же цикл на срезе из настоящих статей (§8.1) ---
       - name: Валидация входов public_dev
         run: |

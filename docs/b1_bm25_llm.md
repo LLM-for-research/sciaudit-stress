@@ -41,7 +41,7 @@ python -m sciaudit.baselines.b1_bm25_llm \
 CLI общие с B2 и живут в `sciaudit/baselines/model_audit.py`. В самом B1
 остаётся только ретрив. Так сделано ради контроля B1/B2: различаться бейзлайны
 обязаны ровно наличием BM25, иначе сравнение в
-[b1_vs_b2.md](b1_vs_b2.md) ничего не измеряет.
+[baselines_compared.md](baselines_compared.md) ничего не измеряет.
 
 ## Что B1 гарантирует независимо от ответа модели
 

@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from sciaudit.baselines import b1_bm25_llm, b2_fullpack_llm, compare_b1_b2, model_audit
+from sciaudit.baselines import b1_bm25_llm, b2_fullpack_llm, compare_baselines, model_audit
 from sciaudit.baselines.model_audit import count_fallbacks
 from sciaudit.schemas.validate_predictions import validate_prediction_file
 
@@ -201,9 +201,9 @@ def test_stub_reacts_to_how_much_evidence_it_sees():
 # --- харнесс сравнения --------------------------------------------------------------
 
 def test_compare_produces_one_row_per_system(tmp_path):
-    rows = compare_b1_b2.compare(
+    rows = compare_baselines.compare(
         WARMUP / "inputs.jsonl", WARMUP / "gold.jsonl",
-        compare_b1_b2.STUB_COMMAND, compare_b1_b2.STUB_MODEL_NAME,
+        compare_baselines.STUB_COMMAND, compare_baselines.STUB_MODEL_NAME,
         top_ks=(1, 2), workdir=str(tmp_path))
     assert [r["system"] for r in rows] == [
         "B1 (BM25, top-k=1)", "B1 (BM25, top-k=2)", "B2 (весь пак)"]
@@ -215,9 +215,9 @@ def test_compare_produces_one_row_per_system(tmp_path):
 
 def test_retrieval_budget_changes_the_result(tmp_path):
     """Если бюджет ретрива ни на что не влияет, контроль бессмысленен."""
-    rows = compare_b1_b2.compare(
+    rows = compare_baselines.compare(
         WARMUP / "inputs.jsonl", WARMUP / "gold.jsonl",
-        compare_b1_b2.STUB_COMMAND, compare_b1_b2.STUB_MODEL_NAME,
+        compare_baselines.STUB_COMMAND, compare_baselines.STUB_MODEL_NAME,
         top_ks=(1, 2), workdir=str(tmp_path))
     by_name = {r["system"]: r for r in rows}
     assert by_name["B1 (BM25, top-k=1)"]["accuracy"] != by_name["B2 (весь пак)"]["accuracy"]
@@ -227,9 +227,9 @@ def test_markdown_warns_loudly_when_numbers_come_from_the_stub():
     rows = [{"system": "B2 (весь пак)", "accuracy": 0.4, "macro_f1": 0.2,
              "evidence_f1": 0.8, "sfwr": 0.1, "coverage": 1.0, "augrc": 0.25,
              "answered": 17, "total": 17, "fallbacks": 0}]
-    stub_md = compare_b1_b2.to_markdown(rows, "stub", "in", "gold", is_stub=True)
-    real_md = compare_b1_b2.to_markdown(rows, "real", "in", "gold", is_stub=False)
-    assert "не моделью" in stub_md and "issue #12" in stub_md
+    stub_md = compare_baselines.to_markdown(rows, "stub", "in", "gold", is_stub=True)
+    real_md = compare_baselines.to_markdown(rows, "real", "in", "gold", is_stub=False)
+    assert "не моделью" in stub_md and "ничего не измеряет" in stub_md
     assert "не моделью" not in real_md
     # Разброс между одинаковыми прогонами измерен и оказался больше разрыва
     # между строками таблицы. Без этой оговорки таблицу прочтут как вывод.
@@ -245,7 +245,7 @@ def test_markdown_shows_the_command_that_actually_produced_it():
     rows = [{"system": "B2 (весь пак)", "accuracy": 0.4, "macro_f1": 0.2,
              "evidence_f1": 0.8, "sfwr": 0.1, "coverage": 1.0, "augrc": 0.25,
              "answered": 24, "total": 24, "fallbacks": 0}]
-    md = compare_b1_b2.to_markdown(
+    md = compare_baselines.to_markdown(
         rows, "real", "data_public/public_dev/inputs.jsonl",
         "data_public/public_dev/gold.jsonl", is_stub=False,
         transport="--model-api", top_ks="1 2 3")
@@ -269,7 +269,7 @@ def test_comparison_can_run_through_the_api_transport(tmp_path):
                 '"predicted_eids": [], "issue_tags": [], "abstain": true, '
                 '"rationale_short": "заглушка вместо сети"}')
 
-    rows = compare_b1_b2.compare(
+    rows = compare_baselines.compare(
         WARMUP / "inputs.jsonl", WARMUP / "gold.jsonl",
         model_command=None, model_name="api-model",
         top_ks=(1,), workdir=str(tmp_path), model_fn=fake_model)
@@ -277,3 +277,97 @@ def test_comparison_can_run_through_the_api_transport(tmp_path):
     assert len(calls) == 17 * 2          # B1 top-k=1 и B2, по разу на инстанс
     assert [r["system"] for r in rows] == ["B1 (BM25, top-k=1)", "B2 (весь пак)"]
     assert all(r["coverage"] == 0.0 for r in rows)
+
+
+# --- повторы и разброс --------------------------------------------------------------
+#
+# Замер разброса (docs/baselines_compared.md) показал, что один прогон сравнения систем не
+# обосновывает: победитель менялся между одинаковыми запусками. Поэтому харнесс
+# обязан уметь повторы и обязан прямо говорить, когда разброс не позволяет
+# назвать победителя.
+
+def _aggregated(name, accuracies):
+    """Строка таблицы в том виде, в каком её возвращает агрегация по повторам."""
+    import statistics
+    row = {"system": name, "repeats": len(accuracies), "values": {},
+           "answered": 17, "total": 17, "fallbacks": 0}
+    for metric in compare_baselines.METRICS:
+        values = accuracies if metric == "accuracy" else [0.5] * len(accuracies)
+        row["values"][metric] = list(values)
+        row[metric] = statistics.median(values)
+    return row
+
+
+def test_repeats_keep_every_run_not_just_the_last(tmp_path):
+    rows = compare_baselines.compare(
+        WARMUP / "inputs.jsonl", WARMUP / "gold.jsonl",
+        compare_baselines.STUB_COMMAND, compare_baselines.STUB_MODEL_NAME,
+        top_ks=(1,), workdir=str(tmp_path), repeats=3)
+    assert all(row["repeats"] == 3 for row in rows)
+    assert all(len(row["values"]["accuracy"]) == 3 for row in rows)
+
+
+def test_the_reported_number_is_the_median_of_the_repeats():
+    row = {"system": "B2 (весь пак)", "repeats": 3, "accuracy": 0.5,
+           "values": {"accuracy": [0.4, 0.5, 0.9]}}
+    assert compare_baselines._cell(row, "accuracy") == "0.500 [0.400–0.900]"
+
+
+def test_a_single_value_is_printed_without_a_fake_spread():
+    row = {"system": "B2 (весь пак)", "repeats": 1, "accuracy": 0.5,
+           "values": {"accuracy": [0.5]}}
+    assert compare_baselines._cell(row, "accuracy") == "0.500"
+
+
+def test_an_unstable_order_is_reported_as_unstable():
+    """Главное, ради чего делаются повторы: честный отказ назвать победителя."""
+    rows = [_aggregated("B1", [0.6, 0.4]), _aggregated("B2", [0.5, 0.7])]
+    stable, winners = compare_baselines.stability(rows)
+    assert (stable, winners) == (False, ["B1", "B2"])
+
+    md = compare_baselines.to_markdown(rows, "m", "in", "gold", is_stub=False, repeats=2)
+    assert "не позволяет назвать победителя" in md
+    assert "вывод не следует" not in md   # оговорка про один прогон здесь неуместна
+
+
+def test_a_stable_order_says_so():
+    rows = [_aggregated("B1", [0.6, 0.62]), _aggregated("B2", [0.5, 0.5])]
+    stable, winners = compare_baselines.stability(rows)
+    assert stable and winners == ["B1", "B1"]
+    assert "Порядок систем устойчив" in compare_baselines.to_markdown(
+        rows, "m", "in", "gold", is_stub=False, repeats=2)
+
+
+def test_repeats_below_one_are_refused(tmp_path):
+    with pytest.raises(ValueError):
+        compare_baselines.compare(
+            WARMUP / "inputs.jsonl", WARMUP / "gold.jsonl",
+            compare_baselines.STUB_COMMAND, compare_baselines.STUB_MODEL_NAME,
+            top_ks=(1,), workdir=str(tmp_path), repeats=0)
+
+
+def test_the_harness_can_run_the_whole_lineup(tmp_path):
+    """B3 и B4 обязаны попадать в ту же таблицу, что B1 и B2.
+
+    Иначе цену осторожности не с чем сравнить: она измеряется только рядом с
+    системой, которая отвечает всегда.
+    """
+    rows = compare_baselines.compare(
+        WARMUP / "inputs.jsonl", WARMUP / "gold.jsonl",
+        compare_baselines.STUB_COMMAND, compare_baselines.STUB_MODEL_NAME,
+        top_ks=(1,), workdir=str(tmp_path), systems=("b2", "b3", "b4"),
+        votes=2, confidence_threshold=0.9)
+    names = [row["system"] for row in rows]
+    assert names == ["B2 (весь пак)", "B3 (пак + чекер)", "B4 (отказ, votes=2)"]
+    by_name = dict(zip(names, rows))
+    # Единственный бейзлайн, которому разрешено не отвечать, — и это видно.
+    assert by_name["B2 (весь пак)"]["coverage"] == 1.0
+    assert by_name["B4 (отказ, votes=2)"]["coverage"] < 1.0
+
+
+def test_an_unknown_system_is_refused(tmp_path):
+    with pytest.raises(ValueError, match="неизвестный бейзлайн"):
+        compare_baselines.compare(
+            WARMUP / "inputs.jsonl", WARMUP / "gold.jsonl",
+            compare_baselines.STUB_COMMAND, compare_baselines.STUB_MODEL_NAME,
+            workdir=str(tmp_path), systems=("b7",))

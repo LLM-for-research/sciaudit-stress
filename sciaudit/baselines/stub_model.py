@@ -9,7 +9,7 @@
 
 * smoke-шаги CI прогоняют B1 и B2 целиком, включая точку входа, не имея
   доступа к модели (issue #12 ещё не закрыт);
-* харнесс сравнения :mod:`sciaudit.baselines.compare_b1_b2` может собрать
+* харнесс сравнения :mod:`sciaudit.baselines.compare_baselines` может собрать
   таблицу и показать, что различие B1 и B2 берётся именно из ретрива, а не из
   случайности модели.
 
@@ -42,7 +42,7 @@ def parse_prompt(prompt):
 
 
 def decide(claim, eids):
-    """Правила заглушки. Меняются только вместе с docs/b1_vs_b2.md."""
+    """Правила заглушки. Меняются только вместе с docs/baselines_compared.md."""
     if not eids:
         return {
             "verdict": "insufficient", "confidence": 0.2, "predicted_eids": [],

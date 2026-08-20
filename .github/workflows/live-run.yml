@@ -1,8 +1,9 @@
 # Прогон бейзлайнов на настоящей модели. Запускается только руками.
 #
-# Почему не в общем CI: один прогон сравнения — это 96 вызовов модели, то есть
-# деньги на каждый коммит. Хуже другое: эндпоинт недетерминирован (замер — в
-# docs/b1_vs_b2.md), метрики плавают между одинаковыми прогонами, и обычный CI
+# Почему не в общем CI: один прогон сравнения — это 96 вызовов модели, а с
+# повторами и B4 счёт идёт на сотни, то есть деньги на каждый коммит. Хуже
+# другое: эндпоинт недетерминирован (замер — в docs/baselines_compared.md),
+# метрики плавают между одинаковыми прогонами, и обычный CI
 # начал бы краснеть на шуме вместо поломок. Секреты к тому же не отдаются на PR
 # из форка, так что для внешнего контрибьютора такой шаг всегда падал бы.
 name: Живой прогон на модели
@@ -21,6 +22,14 @@ on:
         description: "Бюджеты ретрива для B1, через пробел"
         type: string
         default: "1 2 3"
+      systems:
+        description: "Какие бейзлайны сравнивать, через пробел (b1 b2 b3 b4)"
+        type: string
+        default: "b1 b2"
+      repeats:
+        description: "Повторов каждой конфигурации. Один прогон сравнения систем не обосновывает"
+        type: string
+        default: "3"
 
 jobs:
   live:
@@ -42,19 +51,21 @@ jobs:
       - name: Доступ к модели жив?
         run: uv run python -m sciaudit.baselines.model_client --ping
 
-      - name: Сравнение B1 и B2 на живой модели
+      - name: Сравнение бейзлайнов на живой модели
         run: |
-          uv run python -m sciaudit.baselines.compare_b1_b2 \
+          uv run python -m sciaudit.baselines.compare_baselines \
             --input "${{ inputs.split }}/inputs.jsonl" \
             --gold "${{ inputs.split }}/gold.jsonl" \
             --model-api \
+            --systems ${{ inputs.systems }} \
             --top-k ${{ inputs.top_k }} \
-            --out b1_vs_b2.md
-          cat b1_vs_b2.md >> "$GITHUB_STEP_SUMMARY"
+            --repeats ${{ inputs.repeats }} \
+            --out baselines_compared.md
+          cat baselines_compared.md >> "$GITHUB_STEP_SUMMARY"
 
       # Числа одного прогона ничего не решают, поэтому результат кладётся
       # артефактом, а не коммитится в docs/ автоматически.
       - uses: actions/upload-artifact@v4
         with:
-          name: b1-vs-b2-live
-          path: b1_vs_b2.md
+          name: baselines-compared-live
+          path: baselines_compared.md
