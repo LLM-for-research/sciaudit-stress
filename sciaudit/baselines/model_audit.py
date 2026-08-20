@@ -232,11 +232,23 @@ def normalize_prediction(raw, instance_id, allowed_eids, model_name, runtime_sec
 
 def audit_instance(instance, select_evidence, model_command=None, model_name=None,
                    retries=1, model_fn=None, timeout_seconds=DEFAULT_TIMEOUT_SECONDS,
-                   log=None):
+                   log=None, tool=None):
     """Одно предсказание. Возвращает ``(prediction, fallback_reason | None)``.
 
-    ``select_evidence(claim_text, evidence_pack)`` — единственное место, которым
-    бейзлайны на модели отличаются друг от друга.
+    ``select_evidence(claim_text, evidence_pack)`` — то, чем отличаются B1 и B2:
+    какие единицы evidence попадают в промпт.
+
+    ``tool`` — необязательный детерминированный инструмент, тем же способом
+    выражающий разницу между B2 и B3. Объект с двумя методами:
+
+    * ``brief(claim_text, units)`` — что дописать в промпт (или ``None``);
+    * ``refine(prediction, claim_text, units)`` — как поправить готовое
+      предсказание.
+
+    Инструмент не применяется к безопасному отказу: если модель не ответила,
+    бейзлайн отказывается, как любой другой, и это видно в счётчике отказов.
+    Иначе B3 маскировал бы сбои модели детерминированным ответом, и сравнение
+    с B2 перестало бы измерять вклад инструмента.
     """
     start = time.perf_counter()
 
@@ -254,7 +266,12 @@ def audit_instance(instance, select_evidence, model_command=None, model_name=Non
     # команды запуска (в ней может быть ключ), ни из имени python-функции.
     resolved_model = model_name or (MOCK_MODEL_NAME if model_fn else DEFAULT_MODEL_NAME)
 
-    prompt = build_prompt(claim_text, select_evidence(claim_text, evidence_pack))
+    units = select_evidence(claim_text, evidence_pack)
+    prompt = build_prompt(claim_text, units)
+    if tool is not None:
+        brief = tool.brief(claim_text, units)
+        if brief:
+            prompt = f"{prompt}\n{brief}"
 
     last_reason = "model was never called"
     for attempt in range(1, retries + 2):
@@ -271,13 +288,16 @@ def audit_instance(instance, select_evidence, model_command=None, model_name=Non
             if not isinstance(raw, dict):
                 raise ModelCallError("model JSON is not an object")
 
-            return normalize_prediction(
+            prediction = normalize_prediction(
                 raw=raw,
                 instance_id=instance_id,
                 allowed_eids=allowed_eids,
                 model_name=resolved_model,
                 runtime_seconds=time.perf_counter() - start,
-            ), None
+            )
+            if tool is not None:
+                prediction = tool.refine(prediction, claim_text, units)
+            return prediction, None
         except ModelCallError as exc:
             last_reason = str(exc)
             if log is not None:
@@ -291,7 +311,8 @@ def audit_instance(instance, select_evidence, model_command=None, model_name=Non
 
 
 def run(input_path, output_path, select_evidence, model_command=None, model_name=None,
-        retries=1, model_fn=None, timeout_seconds=DEFAULT_TIMEOUT_SECONDS, log=None):
+        retries=1, model_fn=None, timeout_seconds=DEFAULT_TIMEOUT_SECONDS, log=None,
+        tool=None):
     """Прочитать входы, записать по предсказанию на строку, вернуть их список."""
     if model_command is None and model_fn is None:
         raise ValueError("this baseline requires either --model-command or model_fn.")
@@ -309,6 +330,7 @@ def run(input_path, output_path, select_evidence, model_command=None, model_name
             model_fn=model_fn,
             timeout_seconds=timeout_seconds,
             log=log,
+            tool=tool,
         )
         predictions.append(prediction)
 
@@ -382,7 +404,7 @@ def resolve_model(args):
     return model_fn, None, model_name
 
 
-def run_cli(args, select_evidence, label):
+def run_cli(args, select_evidence, label, tool=None):
     """Общее тело ``main`` бейзлайна. Возвращает код возврата процесса."""
     def log(message):
         print(f"{label}: {message}", file=sys.stderr)
@@ -399,6 +421,7 @@ def run_cli(args, select_evidence, label):
             model_fn=model_fn,
             timeout_seconds=args.timeout_seconds,
             log=log,
+            tool=tool,
         )
     except (ValueError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

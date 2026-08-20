@@ -99,6 +99,18 @@ jobs:
       - name: Публикация warm-up метрик в сводку прогона
         run: cat /tmp/warmup_report.md >> "$GITHUB_STEP_SUMMARY"
 
+      # --- B3: тот же пак, что у B2, плюс детерминированная проверка чисел ---
+      - name: Smoke-прогон B3 с заглушкой
+        run: |
+          uv run python -m sciaudit.baselines.b3_checked_llm \
+            --input data_public/public_warmup/inputs.jsonl \
+            --output /tmp/b3_warmup.jsonl \
+            --model-command "python -m sciaudit.baselines.stub_model" \
+            --model-name deterministic-stub-not-a-model
+      - name: Валидация предсказаний B3
+        run: |
+          uv run python -m sciaudit.schemas.validate_predictions /tmp/b3_warmup.jsonl
+
       # --- Контроль B1 против B2 (§11.4): помогает ли ретрив ---
       - name: Сравнение B1 и B2 на публичном warm-up
         run: |
