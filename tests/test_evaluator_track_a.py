@@ -30,9 +30,11 @@ def make_prediction(instance_id, verdict, confidence=0.8, abstain=False):
 def test_track_a_evaluator_on_toy_data():
     metrics = score("examples/toy_predictions.jsonl", "examples/toy_gold.jsonl")
 
+    assert metrics["submission"]["scoreable"] is True
     assert metrics["counts"]["gold_instances"] == 4
-    assert metrics["counts"]["missing_predictions"] == 1
+    assert metrics["counts"]["missing_predictions"] == 0
     assert metrics["counts"]["non_abstained_predictions"] == 3
+    assert metrics["coverage"]["value"] == 0.75
 
     assert "accuracy" in metrics["verdict"]
     assert "macro_f1" in metrics["verdict"]
@@ -44,7 +46,9 @@ def test_track_a_evaluator_on_toy_data():
     assert metrics["severe_false_warrant_rate_non_abstained"]["denominator"] == 2
 
     assert "aurc" in metrics["selective_risk"]
-    assert "thresholds" in metrics["selective_risk"]
+    assert "augrc" in metrics["selective_risk"]
+    assert "curve" in metrics["selective_risk"]
+    assert "at_fixed_coverage" in metrics["selective_risk"]
     assert "coverage_at_target_sfwr" in metrics["selective_risk"]
 
 
@@ -94,10 +98,13 @@ def test_all_predictions_abstain(tmp_path):
     assert metrics["severe_false_warrant_rate_non_abstained"]["denominator"] == 0
     assert metrics["severe_false_warrant_rate_non_abstained"]["rate"] == 0.0
 
-    for point in metrics["selective_risk"]["thresholds"]:
-        assert point["coverage"] == 0.0
-        assert point["risk"] == 0.0
-        assert point["selected_count"] == 0
+    # добровольное покрытие нулевое; за его пределами отказы засчитываются как
+    # ошибки, поэтому риск равен единице, а не нулю
+    assert metrics["selective_risk"]["max_voluntary_coverage"] == 0.0
+    assert metrics["selective_risk"]["aurc_within_voluntary_coverage"] == 0.0
+    assert all(not p["within_voluntary_coverage"]
+               for p in metrics["selective_risk"]["curve"])
+    assert metrics["selective_risk"]["aurc"] == 1.0
 
 
 def test_no_predictions_abstain(tmp_path):
@@ -146,9 +153,10 @@ def test_no_predictions_abstain(tmp_path):
     assert metrics["severe_false_warrant_rate_non_abstained"]["denominator"] == 1
     assert metrics["severe_false_warrant_rate_non_abstained"]["rate"] == 1.0
 
-    first_point = metrics["selective_risk"]["thresholds"][0]
-    assert first_point["coverage"] == 1.0
-    assert first_point["selected_count"] == 2
+    curve = metrics["selective_risk"]["curve"]
+    assert curve[-1]["coverage"] == 1.0
+    assert curve[-1]["k"] == 2
+    assert all(p["within_voluntary_coverage"] for p in curve)
 
 
 # --- представление evaluator'а о валидности = prediction.schema.json ----------
