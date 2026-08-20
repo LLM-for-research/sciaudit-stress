@@ -412,7 +412,7 @@ def test_polarity_helper_prefers_the_author_marker_over_the_metric_name():
 #
 # Здесь чекер опаснее всего: он вправе перебивать модель в B3, поэтому уверенно
 # неверный ответ хуже молчания. Оба дефекта ниже нашлись на живом инстансе
-# sas_qrpw847k, где gold — insufficient, а чекер выдавал contradicted.
+# sas_r095qb9w, где gold — insufficient, а чекер выдавал contradicted.
 
 def test_ordinal_place_is_not_read_as_the_superlative():
     """«Второй по величине» — не «наибольший»."""

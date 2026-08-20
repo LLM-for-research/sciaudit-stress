@@ -237,3 +237,79 @@ def test_the_cli_passes_on_random_ids(tmp_path):
              for index, instance_id in enumerate(_ids(12))]
     inputs, _ = _write(tmp_path, pairs)
     assert id_randomness_check.main(["--inputs", str(inputs)]) == 0
+
+
+# --- перевыдача идентификаторов (§5.5) ----------------------------------------------
+
+def test_regeneration_rewrites_the_seed_reference_too(tmp_path):
+    """Иначе стресс-вариант теряет свой seed и §10.4 становится непроверяемым."""
+    from sciaudit.construction import regenerate_ids
+
+    records = [
+        {"instance_id": "sas_aaaaaaaa", "stress": {"is_stress_case": False}},
+        {"instance_id": "sas_bbbbbbbb",
+         "stress": {"is_stress_case": True, "stress_type": "claim_strengthening",
+                    "seed_instance_id": "sas_aaaaaaaa"}},
+    ]
+    mapping = regenerate_ids.build_mapping(records)
+    updated = [regenerate_ids.apply_mapping(record, mapping) for record in records]
+
+    assert updated[1]["stress"]["seed_instance_id"] == updated[0]["instance_id"]
+    assert updated[0]["instance_id"] != "sas_aaaaaaaa"
+
+
+def test_a_dangling_seed_reference_is_refused():
+    from sciaudit.construction import regenerate_ids
+
+    records = [{"instance_id": "sas_aaaaaaaa",
+                "stress": {"is_stress_case": True, "stress_type": "x",
+                           "seed_instance_id": "sas_missing0"}}]
+    mapping = regenerate_ids.build_mapping(records)
+    with pytest.raises(ValueError, match="повисла"):
+        regenerate_ids.apply_mapping(records[0], mapping)
+
+
+def test_new_ids_pass_the_gate_they_were_generated_for():
+    from sciaudit.construction import regenerate_ids
+
+    records = [{"instance_id": f"sas_old{index:05d}", "stress": {"is_stress_case": False}}
+               for index in range(30)]
+    mapping = regenerate_ids.build_mapping(records)
+    assert id_randomness_check.check_shapes(list(mapping.values())) == []
+
+
+def test_reserved_ids_are_never_handed_out_again():
+    from sciaudit.construction import regenerate_ids
+
+    records = [{"instance_id": "sas_aaaaaaaa"}]
+    taken = {"sas_00000001"}
+    mapping = regenerate_ids.build_mapping(records, reserved=taken)
+    assert set(mapping.values()) & taken == set()
+
+
+def test_a_clustered_draw_is_rejected_and_redrawn():
+    """Случайная выдача изредка выглядит как подсказка. Такую бросают заново."""
+    from sciaudit.construction import regenerate_ids
+
+    labels = ["warranted"] * 6 + ["overclaimed"] * 6
+    records = [{"instance_id": f"sas_seed{i:05d}"} for i in range(12)]
+    gold = {record["instance_id"]: label for record, label in zip(records, labels)}
+
+    clustered = {record["instance_id"]: f"sas_{i:08d}"
+                 for i, record in enumerate(records)}
+    ok, p_value = regenerate_ids.order_is_unremarkable(records, clustered, gold,
+                                                       permutations=500)
+    assert not ok and p_value < 0.05
+
+    scattered = {record["instance_id"]: f"sas_{'ab'[i % 2]}{i:07d}"
+                 for i, record in enumerate(records)}
+    ok_scattered, _ = regenerate_ids.order_is_unremarkable(records, scattered, gold,
+                                                           permutations=500)
+    assert ok_scattered
+
+
+def test_a_random_tail_of_digits_is_not_a_counter():
+    """Ложное срабатывание, из-за которого гейт однажды упал на честных ID."""
+    assert id_randomness_check.check_shapes(["sas_76r7y392", "sas_zelmt770"]) == []
+    assert id_randomness_check.check_shapes(["sas_seed_00045"])
+    assert id_randomness_check.check_shapes(["sas_00000123"])
